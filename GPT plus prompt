@@ -1,0 +1,130 @@
+# RFC Training Dataset — Technical Inspection
+
+Act as a Senior Azure Databricks ML Engineer and independent code auditor.
+
+**Project context**
+
+- Project: Right Fit Cover (RFC) Propensity Model
+- Objective: Predict the probability of an insurance customer reviewing their cover within the next 90 days.
+- Platform: Azure Databricks Runtime 15.4 LTS
+- Technology: Python, PySpark, Databricks Feature Engineering, MLflow
+- Deployment: Existing Databricks Asset Bundles repository maintained by the MLOps team
+
+**Your task**
+
+Inspect the attached RFC feature assembly notebook.
+
+Do not modify, refactor or execute any code. This is a read-only technical assessment.
+
+## 1. Dataset construction
+
+Identify:
+
+- Notebook entry points and major processing stages.
+- Source tables and feature tables.
+- FeatureLookup definitions and lookup keys.
+- Timestamp lookup keys, where configured.
+- Join conditions and join types.
+- Transformations, filtering and deduplication.
+- Target-label creation, if present.
+- Final dataset schema and output location.
+
+## 2. Determinism assessment
+
+Inspect the notebook for:
+
+- Unseeded random sampling or random number generation.
+- `current_date()`, `current_timestamp()` or other execution-time dependencies.
+- `first()`, `last()`, `dropDuplicates()` or `row_number()` with ambiguous ordering.
+- Non-unique window ordering and unstable tie-breaking.
+- Non-deterministic aggregations.
+- Join cardinality issues and duplicate lookup keys.
+- Mutable source tables or unpinned Delta versions.
+- Dependencies on Spark partitioning or execution order.
+- Dynamic configuration or date parameters.
+
+For each finding, explain the actual risk and whether the code demonstrates a defect or merely requires further validation.
+
+## 3. Temporal leakage assessment
+
+Determine:
+
+- How the prediction/as-of date is defined.
+- Whether feature values are restricted to information available at that date.
+- Whether FeatureLookup uses point-in-time timestamp keys.
+- Whether feature timestamps represent availability time or event time.
+- Whether future information could enter historical records.
+- Whether the 90-day label window overlaps the feature observation period.
+- Whether the final dataset includes columns unavailable at prediction time.
+
+Do not assume FeatureLookup automatically guarantees point-in-time correctness.
+
+## 4. Reproducibility assessment
+
+Identify whether the pipeline records or controls:
+
+- Source Delta table versions.
+- Code or Git commit version.
+- Runtime and library versions.
+- Configuration and execution parameters.
+- Training snapshot dates.
+- Output dataset versions.
+- Random seeds, where applicable.
+
+Distinguish dataset determinism from historical reproducibility.
+
+## 5. Proposed validation tests
+
+Recommend Databricks Runtime 15.4 LTS-compatible tests for:
+
+- Repeated execution against frozen inputs.
+- Row-count consistency.
+- Schema equality.
+- Unique business-key validation.
+- Null and label-distribution comparisons.
+- Order-independent dataset fingerprint comparison.
+- Point-in-time feature correctness.
+- Historical dataset reconstruction.
+
+Explain test preconditions, expected results and limitations.
+
+## 6. Required output format
+
+Produce a structured technical audit containing:
+
+**A. Notebook workflow summary**
+
+**B. Feature lookup inventory**
+
+**C. Determinism risk register**
+
+**D. Temporal leakage risk register**
+
+**E. Reproducibility gaps**
+
+**F. Recommended validation tests**
+
+**G. Questions requiring business or MLOps clarification**
+
+For every finding, provide:
+
+- Severity: Critical / High / Medium / Low
+- Notebook cell number or function name
+- Relevant code excerpt
+- Explanation of the risk
+- Evidence supporting the finding
+- Recommended validation or corrective action
+
+**Important instructions**
+
+Do not invent implementation details.
+
+Explicitly mark anything that cannot be verified from the notebook as "Not verified".
+
+Distinguish confirmed defects from potential risks.
+
+Do not recommend wholesale copying of the existing churn model.
+
+Do not propose training RFC models yet.
+
+This assessment must focus on the trustworthiness and reproducibility of the RFC training dataset.
