@@ -22,3 +22,15 @@ For every issue, explain:
 * Provide corrected code where appropriate.
 
 Distinguish between critical issues and optional improvements.
+
+Further polished prompt:
+It’s a solid, focused review prompt: it sets a clear role, explicitly asks for critical rather than agreeable feedback, and covers the main ML and production risks. The severity split and “why it matters / how to improve” structure should make the feedback useful.
+
+A few gaps could make results inconsistent:
+
+- **“Insurance churn” needs context.** Churn definitions, prediction horizon, observation point, and intervention use affect what counts as leakage and a valid validation strategy.
+- **Ask the reviewer not to assume missing details.** Have it state assumptions and flag questions that materially affect the review.
+- **Require evidence.** Ask it to point to the relevant code or behavior for each finding, and distinguish confirmed issues from risks that depend on the data or deployment setup.
+- **Bound the output.** “For every issue” can encourage exhaustive nitpicking. Ask it to lead with the highest-impact findings and keep optional suggestions separate.
+
+For example, add: *“Do not infer the churn definition, prediction horizon, or deployment constraints. State assumptions, and ask clarifying questions when they change the assessment. Tie each finding to specific code; rank findings by severity and confidence, and prioritize the most consequential issues.”*
