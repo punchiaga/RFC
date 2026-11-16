@@ -15,3 +15,10 @@ for package in packages:
         print(f"{package}: OK | Version: {version}")
     except Exception as e:
         print(f"{package}: FAILED | {type(e).__name__}: {e}")
+
+
+xgboost: FAILED | ModuleNotFoundError: No module named 'xgboost'
+lightgbm: FAILED | ModuleNotFoundError: No module named 'lightgbm'
+mlflow: OK | Version: 3.0.1
+pyspark: OK | Version: 3.5.0
+sklearn: OK | Version: 1.3.0
