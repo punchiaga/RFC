@@ -7,3 +7,26 @@ rfc_df.groupBy("target").agg(
     F.min("days_from_snapshot_to_first_event").alias("min_days"),
     F.max("days_from_snapshot_to_first_event").alias("max_days")
 ).orderBy("target").show()
+
+# Cell 15: Inspect target distribution across snapshots
+
+from pyspark.sql import functions as F
+
+snapshot_summary = (
+    rfc_df
+    .groupBy(F.to_date("effective_dttm").alias("snapshot_date"))
+    .agg(
+        F.count("*").alias("total_records"),
+        F.sum(F.col("target").cast("long")).alias("positive_records")
+    )
+    .withColumn(
+        "positive_rate_pct",
+        F.round(
+            F.col("positive_records") / F.col("total_records") * 100,
+            2
+        )
+    )
+    .orderBy("snapshot_date")
+)
+
+display(snapshot_summary)
