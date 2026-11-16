@@ -11,3 +11,16 @@ print("Remaining date/timestamp features:", len(temporal_features))
 
 for name, dtype in temporal_features:
     print(f"{name}: {dtype}")
+
+
+Remaining date/timestamp features: 10
+policy_latest_dishonour_date: date
+min_policy_person_lhc_person_expiry_date: date
+max_policy_person_lhc_person_expiry_date: date
+policy_person_lhc_membership_expiry_date: date
+policy_business_effective_date: date
+policy_business_expiry_date: date
+policy_start_dt: date
+policy_end_dt: date
+policy_premium_business_effective_dttm: timestamp
+policy_premium_business_expiry_dttm: timestamp
