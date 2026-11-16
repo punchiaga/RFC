@@ -11,7 +11,25 @@ print("\nCategorical features:")
 for c in rfc_categorical_columns:
     print(c)
 
+# Cell 26: Refresh categorical features after exclusions
 
+rfc_feature_columns = [
+    c for c in rfc_train_df.columns
+    if c not in RFC_EXCLUDE_COLUMNS
+]
+
+rfc_categorical_columns = [
+    c for c in rfc_feature_columns
+    if dict(rfc_train_df.dtypes)[c] == "string"
+]
+
+print("Candidate features:", len(rfc_feature_columns))
+print("Categorical features:", len(rfc_categorical_columns))
+print("Numeric/other features:",
+      len(rfc_feature_columns) - len(rfc_categorical_columns))
+
+
+#Output from cell 25
 Categorical feature count: 79
 
 Categorical features:
