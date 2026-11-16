@@ -1,0 +1,32 @@
+# Cell 21: Profile categorical feature cardinality
+
+from pyspark.sql import functions as F
+
+string_features = [
+    col for col, dtype in feature_types.items()
+    if dtype == "string"
+]
+
+cardinality_exprs = [
+    F.approx_count_distinct(F.col(c)).alias(c)
+    for c in string_features
+]
+
+cardinality_row = (
+    rfc_train_df
+    .agg(*cardinality_exprs)
+    .first()
+    .asDict()
+)
+
+cardinality_summary = sorted(
+    cardinality_row.items(),
+    key=lambda x: x[1],
+    reverse=True
+)
+
+print("Total string features:", len(string_features))
+print("\nTop 20 highest-cardinality string features:")
+
+for col, count in cardinality_summary[:20]:
+    print(f"{col}: {count}")
