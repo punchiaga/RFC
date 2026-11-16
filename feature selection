@@ -1,0 +1,25 @@
+# Cell 19: Define initial RFC feature exclusions
+
+RFC_EXCLUDE_COLUMNS = [
+    "policy_id",
+    "effective_dttm",
+    "target",
+    "target_first_event_date",
+    "target_first_source",
+    "days_from_snapshot_to_first_event"
+]
+
+rfc_feature_columns = [
+    c for c in rfc_train_df.columns
+    if c not in RFC_EXCLUDE_COLUMNS
+]
+
+print("Total source columns:", len(rfc_train_df.columns))
+print("Excluded columns:", RFC_EXCLUDE_COLUMNS)
+print("Remaining candidate features:", len(rfc_feature_columns))
+
+print("\nMissing exclusion columns:")
+print([
+    c for c in RFC_EXCLUDE_COLUMNS
+    if c not in rfc_train_df.columns
+])
