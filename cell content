@@ -1,0 +1,19 @@
+# Cell 10: RFC dataset configuration
+
+RFC_CONFIG = {
+    "catalog": "YOUR_CATALOG",
+    "schema": "YOUR_SCHEMA",
+    "table": "YOUR_RFC_TABLE",
+    "sample_size": 10000,
+    "random_seed": 42
+}
+
+RFC_TABLE_PATH = (
+    f"{RFC_CONFIG['catalog']}."
+    f"{RFC_CONFIG['schema']}."
+    f"{RFC_CONFIG['table']}"
+)
+
+print("RFC source table:", RFC_TABLE_PATH)
+print("Sample size:", RFC_CONFIG["sample_size"])
+print("Random seed:", RFC_CONFIG["random_seed"])
