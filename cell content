@@ -48,3 +48,15 @@ rfc_df.printSchema()
 
 print("\nFirst 5 records:")
 display(rfc_df.limit(5))
+
+# Cell 14: Inspect snapshot dates and policy coverage
+
+from pyspark.sql import functions as F
+
+rfc_df.agg(
+    F.min("effective_dttm").alias("first_snapshot"),
+    F.max("effective_dttm").alias("last_snapshot"),
+    F.countDistinct("effective_dttm").alias("distinct_snapshot_timestamps"),
+    F.countDistinct("policy_id").alias("distinct_policies"),
+    F.count("*").alias("total_rows")
+).show(truncate=False)
