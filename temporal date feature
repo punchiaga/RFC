@@ -1,0 +1,13 @@
+# Cell 27: Identify remaining temporal features
+
+temporal_features = [
+    (field.name, field.dataType.simpleString())
+    for field in rfc_train_df.schema.fields
+    if field.name in rfc_feature_columns
+    and field.dataType.simpleString() in ("date", "timestamp")
+]
+
+print("Remaining date/timestamp features:", len(temporal_features))
+
+for name, dtype in temporal_features:
+    print(f"{name}: {dtype}")
