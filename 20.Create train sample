@@ -1,0 +1,29 @@
+# Cell 29: Create reproducible ~10k training sample
+
+from pyspark.sql import functions as F
+
+seed = RFC_CONFIG["random_seed"]
+sample_size = RFC_CONFIG["sample_size"]
+
+# Approximately half positives, half negatives
+positive_target = sample_size // 2
+negative_target = sample_size - positive_target
+
+positive_df = rfc_train_df.filter(F.col("target") == 1)
+negative_df = rfc_train_df.filter(F.col("target") == 0)
+
+positive_count = positive_df.count()
+negative_count = negative_df.count()
+
+positive_fraction = min(1.0, positive_target / positive_count)
+negative_fraction = min(1.0, negative_target / negative_count)
+
+rfc_train_sample_df = (
+    positive_df.sample(False, positive_fraction, seed)
+    .unionByName(
+        negative_df.sample(False, negative_fraction, seed)
+    )
+)
+
+print("Training sample distribution:")
+rfc_train_sample_df.groupBy("target").count().orderBy("target").show()
