@@ -1,0 +1,29 @@
+# Cell 17: Configure validation and test source tables
+
+RFC_CONFIG["validation_table"] = "rfc_validation_sample"
+RFC_CONFIG["test_table"] = "rfc_testa_sample"
+
+RFC_VALIDATION_TABLE_PATH = (
+    f"{RFC_CONFIG['catalog']}."
+    f"{RFC_CONFIG['schema']}."
+    f"{RFC_CONFIG['validation_table']}"
+)
+
+RFC_TEST_TABLE_PATH = (
+    f"{RFC_CONFIG['catalog']}."
+    f"{RFC_CONFIG['schema']}."
+    f"{RFC_CONFIG['test_table']}"
+)
+
+print("Training table:", RFC_TABLE_PATH)
+print("Validation table:", RFC_VALIDATION_TABLE_PATH)
+print("Test table:", RFC_TEST_TABLE_PATH)
+
+print(
+    "Validation exists:",
+    spark.catalog.tableExists(RFC_VALIDATION_TABLE_PATH)
+)
+print(
+    "Test exists:",
+    spark.catalog.tableExists(RFC_TEST_TABLE_PATH)
+)
