@@ -30,3 +30,28 @@ print("\nTop 20 highest-cardinality string features:")
 
 for col, count in cardinality_summary[:20]:
     print(f"{col}: {count}")
+
+
+Total string features: 101
+
+Top 20 highest-cardinality string features:
+policy_latest_coverchange_date: 13637
+policy_package_code_prev: 13571
+policy_package_code: 11333
+policy_package_cd: 7094
+policy_package_name_prev: 4647
+policy_package_name: 2997
+policy_package_dsc: 2868
+blr_first_login_date: 1191
+top3_lifetime_last_order_date: 1181
+blr_recent_event_date: 1171
+top1_lifetime_last_order_date: 1171
+top2_lifetime_last_order_date: 1171
+policy_date_paid_to: 1161
+policy_latest_coverchange_dtls: 1124
+policy_last_payment_date: 1034
+top1_24m_last_order_date: 1026
+top3_24m_last_order_date: 990
+top2_24m_last_order_date: 983
+policy_org_discount_per: 671
+policy_latest_call_date: 484
