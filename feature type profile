@@ -1,3 +1,34 @@
+# Cell 24: Refresh feature metadata after transformation
+
+rfc_feature_columns = [
+    c for c in rfc_train_df.columns
+    if c not in RFC_EXCLUDE_COLUMNS
+]
+
+feature_types = {
+    field.name: field.dataType.simpleString()
+    for field in rfc_train_df.schema.fields
+    if field.name in rfc_feature_columns
+}
+
+print(
+    "Discount type:",
+    feature_types["policy_org_discount_per"]
+)
+
+print(
+    "Missing indicator type:",
+    feature_types["policy_org_discount_per_missing"]
+)
+
+print("Candidate features:", len(rfc_feature_columns))
+print(
+    "Remaining string features:",
+    sum(dtype == "string" for dtype in feature_types.values())
+)
+
+
+
 Candidate features: 744
 
 Feature data types:
