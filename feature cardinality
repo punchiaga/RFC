@@ -55,3 +55,25 @@ top3_24m_last_order_date: 990
 top2_24m_last_order_date: 983
 policy_org_discount_per: 671
 policy_latest_call_date: 484
+
+
+# Cell 22: Refresh candidate features after exclusions
+
+rfc_feature_columns = [
+    c for c in rfc_train_df.columns
+    if c not in RFC_EXCLUDE_COLUMNS
+]
+
+remaining_string_features = [
+    c for c in rfc_feature_columns
+    if feature_types.get(c) == "string"
+]
+
+print("Total candidate features:", len(rfc_feature_columns))
+print("Remaining string features:", len(remaining_string_features))
+
+print("\nRemaining high-cardinality strings (>100 distinct values):")
+
+for col, count in cardinality_summary:
+    if col in remaining_string_features and count > 100:
+        print(f"{col}: {count}")
