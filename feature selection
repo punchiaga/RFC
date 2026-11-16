@@ -1,3 +1,23 @@
+# Cell 18: Check RFC dataset sizes and target distributions
+
+from pyspark.sql import functions as F
+
+rfc_train_df = spark.table(RFC_TABLE_PATH)
+rfc_val_df = spark.table(RFC_VALIDATION_TABLE_PATH)
+rfc_test_df = spark.table(RFC_TEST_TABLE_PATH)
+
+for name, df in [
+    ("TRAIN", rfc_train_df),
+    ("VALIDATION", rfc_val_df),
+    ("TEST", rfc_test_df)
+]:
+    print(f"\n{name}")
+    df.groupBy("target").agg(
+        F.count("*").alias("records")
+    ).orderBy("target").show()
+
+
+
 # Cell 19: Define initial RFC feature exclusions
 
 RFC_EXCLUDE_COLUMNS = [
