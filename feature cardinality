@@ -77,3 +77,19 @@ print("\nRemaining high-cardinality strings (>100 distinct values):")
 for col, count in cardinality_summary:
     if col in remaining_string_features and count > 100:
         print(f"{col}: {count}")
+
+
+Total candidate features: 723
+Remaining string features: 80
+
+Remaining high-cardinality strings (>100 distinct values):
+policy_org_discount_per: 671
+blr_recent_order_item: 464
+top1_lifetime_order_item: 183
+top1_24m_order_item: 170
+policy_hosp_prod_desc: 159
+top2_lifetime_order_item: 154
+top3_lifetime_order_item: 146
+top2_24m_order_item: 142
+top3_24m_order_item: 138
+policy_latest_call_app_tag: 105
