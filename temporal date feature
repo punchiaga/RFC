@@ -25,3 +25,22 @@ policy_end_dt: date
 policy_premium_business_effective_dttm: timestamp
 policy_premium_business_expiry_dttm: timestamp
 
+# Cell 28: Temporary exclusion of date/timestamp features
+
+RFC_DATE_ENGINEERING_PENDING = True
+
+rfc_temporal_columns = [
+    field.name
+    for field in rfc_train_df.schema.fields
+    if field.name in rfc_feature_columns
+    and field.dataType.simpleString() in ("date", "timestamp")
+]
+
+rfc_model_feature_columns = [
+    c for c in rfc_feature_columns
+    if c not in rfc_temporal_columns
+]
+
+print("Date engineering pending:", RFC_DATE_ENGINEERING_PENDING)
+print("Temporarily excluded date columns:", len(rfc_temporal_columns))
+print("Model candidate features:", len(rfc_model_feature_columns))
