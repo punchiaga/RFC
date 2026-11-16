@@ -112,3 +112,16 @@ Hosp_group_OverseasHospitalOnsale
 Hosp_group_RetailHospitalOffsale
 Hosp_group_RetailHospitalOnsale
 MEMBERSHIP_STATUS_SUSPENDED
+
+Total candidate features: 712
+Remaining string features: 66
+
+Remaining high-cardinality strings (>100 distinct values):
+blr_recent_order_item: 464
+top1_lifetime_order_item: 183
+top1_24m_order_item: 170
+top2_lifetime_order_item: 154
+top3_lifetime_order_item: 146
+top2_24m_order_item: 142
+top3_24m_order_item: 138
+policy_latest_call_app_tag: 105
