@@ -1,0 +1,32 @@
+# Cell 30: Define distributed categorical encoding stages
+
+from pyspark.ml.feature import StringIndexer, OneHotEncoder
+
+rfc_categorical_columns = [
+    c for c in rfc_model_feature_columns
+    if dict(rfc_train_sample_df.dtypes)[c] == "string"
+]
+
+rfc_indexed_columns = [
+    f"{c}__idx" for c in rfc_categorical_columns
+]
+
+rfc_encoded_columns = [
+    f"{c}__ohe" for c in rfc_categorical_columns
+]
+
+rfc_indexer = StringIndexer(
+    inputCols=rfc_categorical_columns,
+    outputCols=rfc_indexed_columns,
+    handleInvalid="keep"
+)
+
+rfc_encoder = OneHotEncoder(
+    inputCols=rfc_indexed_columns,
+    outputCols=rfc_encoded_columns,
+    handleInvalid="keep"
+)
+
+print("Categorical columns:", len(rfc_categorical_columns))
+print("Indexer outputs:", len(rfc_indexed_columns))
+print("Encoder outputs:", len(rfc_encoded_columns))
