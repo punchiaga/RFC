@@ -118,3 +118,19 @@ rfc_train_df.select(
         )
     ).alias("non_numeric_values")
 ).show()
+
+
+# Converted to double:
+rfc_train_df = (
+    rfc_train_df
+    .withColumn(
+        "policy_org_discount_per",
+        F.col("policy_org_discount_per").cast("double")
+    )
+    .withColumn(
+        "policy_org_discount_per_missing",
+        F.when(
+            F.col("policy_org_discount_per").isNull(), 1.0
+        ).otherwise(0.0)
+    )
+)
