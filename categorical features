@@ -1,0 +1,12 @@
+# Cell 25: Identify remaining categorical features
+
+rfc_categorical_columns = [
+    c for c in rfc_feature_columns
+    if feature_types[c] == "string"
+]
+
+print("Categorical feature count:", len(rfc_categorical_columns))
+
+print("\nCategorical features:")
+for c in rfc_categorical_columns:
+    print(c)
