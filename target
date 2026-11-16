@@ -48,3 +48,36 @@ rfc_df.groupBy(
         ).otherwise(0)
     ).alias("positives_after_90_days")
 ).orderBy("snapshot_date").show(12, truncate=False)
+
+# Cell 17: Check whether target labels align with event timing
+
+from pyspark.sql import functions as F
+
+rfc_df.agg(
+    F.sum(
+        F.when(
+            (F.col("target") == 1) &
+            F.col("target_first_event_date").isNull(),
+            1
+        ).otherwise(0)
+    ).alias("positive_missing_event_date"),
+
+    F.sum(
+        F.when(
+            (F.col("target") == 0) &
+            F.col("target_first_event_date").isNotNull(),
+            1
+        ).otherwise(0)
+    ).alias("negative_with_event_date"),
+
+    F.sum(
+        F.when(
+            (F.col("target") == 1) &
+            (
+                F.col("days_from_snapshot_to_first_event").isNull() |
+                (F.col("days_from_snapshot_to_first_event") < 0)
+            ),
+            1
+        ).otherwise(0)
+    ).alias("positive_invalid_event_days")
+).show()
