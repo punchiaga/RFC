@@ -1,0 +1,17 @@
+import importlib
+
+packages = [
+    "xgboost",
+    "lightgbm",
+    "mlflow",
+    "pyspark",
+    "sklearn"
+]
+
+for package in packages:
+    try:
+        module = importlib.import_module(package)
+        version = getattr(module, "__version__", "Unknown")
+        print(f"{package}: OK | Version: {version}")
+    except Exception as e:
+        print(f"{package}: FAILED | {type(e).__name__}: {e}")
