@@ -1,5 +1,9 @@
 # Cell 29: Create reproducible ~10k training sample
 
+This is a prototype-only sampling strategy, not an exact reproduction of Churn's 5% negative sampling. The resulting 50/50 distribution differs substantially from RFC's natural positive rate of approximately 3.2%.
+
+That affects probability calibration, so we must not interpret the initial model's raw outputs as reliable 90-day probabilities without adjustment and evaluation against representative validation/test data.
+
 from pyspark.sql import functions as F
 
 seed = RFC_CONFIG["random_seed"]
