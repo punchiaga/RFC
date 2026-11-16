@@ -37,3 +37,14 @@ RFC_TABLE_PATH = (
 
 print("RFC table:", RFC_TABLE_PATH)
 print("Table exists:", spark.catalog.tableExists(RFC_TABLE_PATH))
+
+# Cell 12: Load and inspect RFC source data
+
+rfc_df = spark.table(RFC_TABLE_PATH)
+
+print("Number of columns:", len(rfc_df.columns))
+print("\nColumn names and data types:")
+rfc_df.printSchema()
+
+print("\nFirst 5 records:")
+display(rfc_df.limit(5))
