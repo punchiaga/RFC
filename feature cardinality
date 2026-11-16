@@ -93,3 +93,28 @@ top3_lifetime_order_item: 146
 top2_24m_order_item: 142
 top3_24m_order_item: 138
 policy_latest_call_app_tag: 105
+
+# Cell 23: Inspect organisation discount percentage
+
+from pyspark.sql import functions as F
+
+rfc_train_df.select(
+    "policy_org_discount_per"
+).groupBy(
+    "policy_org_discount_per"
+).count().orderBy(
+    F.desc("count")
+).show(20, truncate=False)
+
+# Check whether non-null values can be converted to double
+rfc_train_df.select(
+    F.count(
+        F.when(
+            F.col("policy_org_discount_per").isNotNull()
+            & F.expr(
+                "try_cast(policy_org_discount_per AS DOUBLE)"
+            ).isNull(),
+            1
+        )
+    ).alias("non_numeric_values")
+).show()
