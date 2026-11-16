@@ -1,0 +1,23 @@
+# Cell 28: Date feature engineering placeholder
+
+RFC_DATE_ENGINEERING_PENDING = True
+
+# TODO:
+# Create snapshot-relative date features using effective_dttm.
+# Apply identical transformations to train/validation/test/scoring.
+
+rfc_temporal_columns = [
+    field.name
+    for field in rfc_train_df.schema.fields
+    if field.name in rfc_feature_columns
+    and field.dataType.simpleString() in ("date", "timestamp")
+]
+
+rfc_model_feature_columns = [
+    c for c in rfc_feature_columns
+    if c not in rfc_temporal_columns
+]
+
+print("Date engineering pending:", RFC_DATE_ENGINEERING_PENDING)
+print("Temporarily excluded:", rfc_temporal_columns)
+print("Model-ready candidate columns:", len(rfc_model_feature_columns))
