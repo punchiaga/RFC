@@ -17,3 +17,23 @@ RFC_TABLE_PATH = (
 print("RFC source table:", RFC_TABLE_PATH)
 print("Sample size:", RFC_CONFIG["sample_size"])
 print("Random seed:", RFC_CONFIG["random_seed"])
+
+
+# Cell 11: Validate source table configuration
+
+required_keys = ["catalog", "schema", "table"]
+
+for key in required_keys:
+    value = RFC_CONFIG[key].strip()
+    assert value and not value.startswith("YOUR_"), (
+        f"Please configure the actual RFC {key}."
+    )
+
+RFC_TABLE_PATH = (
+    f"{RFC_CONFIG['catalog']}."
+    f"{RFC_CONFIG['schema']}."
+    f"{RFC_CONFIG['table']}"
+)
+
+print("RFC table:", RFC_TABLE_PATH)
+print("Table exists:", spark.catalog.tableExists(RFC_TABLE_PATH))
