@@ -1,0 +1,36 @@
+# Cell 20: Profile RFC candidate feature data types
+
+from collections import Counter
+
+feature_types = {
+    field.name: field.dataType.simpleString()
+    for field in rfc_train_df.schema.fields
+    if field.name in rfc_feature_columns
+}
+
+type_counts = Counter(feature_types.values())
+
+print("Candidate features:", len(feature_types))
+print("\nFeature data types:")
+
+for dtype, count in sorted(type_counts.items()):
+    print(f"{dtype}: {count}")
+
+print("\nNon-numeric candidate features:")
+
+numeric_types = {
+    "int", "bigint", "double", "float",
+    "smallint", "tinyint"
+}
+
+non_numeric_features = {
+    col: dtype
+    for col, dtype in feature_types.items()
+    if dtype not in numeric_types
+    and not dtype.startswith("decimal")
+}
+
+for col, dtype in non_numeric_features.items():
+    print(f"{col}: {dtype}")
+
+print("\nNon-numeric feature count:", len(non_numeric_features))
