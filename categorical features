@@ -130,5 +130,74 @@ policy_latest_call_app_tag: 105
 
 print(f"Categorical feature count: {len(rfc_categorical_columns)}")
 
+Categorical feature count: 67
+01. Ancl_group_CorporateAncillaryOffsale
+02. Ancl_group_CorporateAncillaryOnsale
+03. Ancl_group_NoAncillary
+04. Ancl_group_RetailAncillaryOffsale
+05. Ancl_group_RetailAncillaryOnsale
+06. Hosp_group_CorporateHospitalOffsale
+07. Hosp_group_CorporateHospitalOnsale
+08. Hosp_group_NoHospital
+09. Hosp_group_OverseasHospitalOnsale
+10. Hosp_group_RetailHospitalOffsale
+11. Hosp_group_RetailHospitalOnsale
+12. blr_recent_order_item
+13. person_location_state
+14. policy_cover_type
+15. policy_family_type
+16. policy_family_type_code
+17. policy_is_ancl_prod_corp
+18. policy_is_ancl_prod_gap_free
+19. policy_is_ancl_prod_market_seg
+20. policy_is_ancl_prod_off_sale
+21. policy_is_ancl_prod_srv_sel
+22. policy_is_ancl_prod_tier
+23. policy_is_ddd_in_past_3_months
+24. policy_is_future_dd_payment
+25. policy_is_hosp_prod_copay
+26. policy_is_hosp_prod_corp
+27. policy_is_hosp_prod_gap_bonus
+28. policy_is_hosp_prod_market_seg
+29. policy_is_hosp_prod_off_sale
+30. policy_is_hosp_prod_tier
+31. policy_is_mbr_type_cvr_type
+32. policy_is_scheduled_payment
+33. policy_latest_call_app_tag
+34. policy_latest_call_last_leg
+35. policy_latest_coverchange_1yr
+36. policy_latest_coverchange_2yr
+37. policy_latest_coverchange_30days
+38. policy_latest_coverchange_6mths
+39. policy_latest_coverchange_7days
+40. policy_latest_payment_method
+41. policy_lifestage_segment
+42. policy_lifestage_segment_group
+43. policy_lifestage_sub_segment
+44. policy_org_bupa_staff
+45. policy_org_comparator
+46. policy_org_corp_split_bill
+47. policy_org_corp_subsidised
+48. policy_org_corp_voluntary
+49. policy_org_defence
+50. policy_org_discount_per
+51. policy_org_google
+52. policy_org_is_active
+53. policy_org_is_pending
+54. policy_org_retention_offer
+55. policy_org_sub_type
+56. policy_org_type
+57. policy_payment_arrangement
+58. policy_person_membership_details_relationship
+59. policy_status_cd
+60. sales_channel_code
+61. sales_channel_name
+62. top1_24m_order_item
+63. top1_lifetime_order_item
+64. top2_24m_order_item
+65. top2_lifetime_order_item
+66. top3_24m_order_item
+67. top3_lifetime_order_item
+
 for i, column in enumerate(sorted(rfc_categorical_columns), start=1):
     print(f"{i:02d}. {column}")
