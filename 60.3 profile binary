@@ -1,0 +1,35 @@
+# Step 16: Profile binary indicator values
+
+from pyspark.sql import functions as F
+
+binary_profile_exprs = []
+
+for c in rfc_binary_candidate_columns:
+    value = F.upper(F.trim(F.col(c)))
+
+    binary_profile_exprs.extend([
+        F.sum(F.when(value == "Y", 1).otherwise(0)).alias(f"{c}__Y"),
+        F.sum(F.when(value == "N", 1).otherwise(0)).alias(f"{c}__N"),
+        F.sum(F.when(F.col(c).isNull(), 1).otherwise(0)).alias(f"{c}__NULL"),
+        F.sum(F.when(value == "", 1).otherwise(0)).alias(f"{c}__BLANK"),
+    ])
+
+profile = rfc_train_prototype_df.agg(*binary_profile_exprs).first().asDict()
+
+binary_summary = [
+    (
+        c,
+        profile[f"{c}__Y"],
+        profile[f"{c}__N"],
+        profile[f"{c}__NULL"],
+        profile[f"{c}__BLANK"]
+    )
+    for c in rfc_binary_candidate_columns
+]
+
+display(
+    spark.createDataFrame(
+        binary_summary,
+        ["feature", "Y", "N", "NULL", "BLANK"]
+    ).orderBy("feature")
+)
