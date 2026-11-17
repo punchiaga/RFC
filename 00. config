@@ -1,0 +1,69 @@
+# RFC — Dataset configuration
+
+RFC_DATA_CONFIG = {
+    "catalog": ml_catalog,
+    "schema": ml_schema,
+    "batch_process_id": batch_process_id,
+    "user_prefix": user_prefix,
+
+    # Dataset split configuration
+    "train_pct": 81,
+    "validation_pct": 9,
+    "test_pct": 10,
+
+    # Sampling configuration
+    "negative_sample_pct": 5,
+    "validation_sample_pct": 100,
+    "test_sample_pct": 100,
+
+    "random_seed": 42,
+}
+
+# Validate configuration
+assert (
+    RFC_DATA_CONFIG["train_pct"]
+    + RFC_DATA_CONFIG["validation_pct"]
+    + RFC_DATA_CONFIG["test_pct"]
+) == 100, "Train/validation/test percentages must total 100"
+
+for key in [
+    "negative_sample_pct",
+    "validation_sample_pct",
+    "test_sample_pct",
+]:
+    assert 0 <= RFC_DATA_CONFIG[key] <= 100, f"Invalid {key}"
+
+# Centralised table paths
+RFC_SCHEMA_PATH = (
+    f"{RFC_DATA_CONFIG['catalog']}."
+    f"{RFC_DATA_CONFIG['schema']}"
+)
+
+RFC_SOURCE_TABLE = (
+    f"{RFC_SCHEMA_PATH}."
+    f"rfc_training_{batch_process_id}_test_1_{user_prefix}"
+)
+
+RFC_TRAIN_TABLE = (
+    f"{RFC_SCHEMA_PATH}.rfc_training_{batch_process_id}_train"
+)
+
+RFC_VALIDATION_TABLE = (
+    f"{RFC_SCHEMA_PATH}.rfc_training_{batch_process_id}_validation"
+)
+
+RFC_TEST_TABLE = (
+    f"{RFC_SCHEMA_PATH}.rfc_training_{batch_process_id}_test"
+)
+
+RFC_TRAIN_SAMPLED_TABLE = f"{RFC_TRAIN_TABLE}_sampled"
+RFC_VALIDATION_SAMPLED_TABLE = f"{RFC_VALIDATION_TABLE}_sampled"
+RFC_TEST_SAMPLED_TABLE = f"{RFC_TEST_TABLE}_sampled"
+
+print("Source:", RFC_SOURCE_TABLE)
+print("Train:", RFC_TRAIN_TABLE)
+print("Validation:", RFC_VALIDATION_TABLE)
+print("Test:", RFC_TEST_TABLE)
+print("Train sampled:", RFC_TRAIN_SAMPLED_TABLE)
+print("Validation sampled:", RFC_VALIDATION_SAMPLED_TABLE)
+print("Test sampled:", RFC_TEST_SAMPLED_TABLE)
