@@ -19,3 +19,69 @@ policy_split_summary = (
 )
 
 display(policy_split_summary)
+
+
+from pyspark.sql import functions as F
+
+# Full and sampled dataset summaries
+datasets = {
+    "Train": (train_df, sampled_train_df),
+    "Validation": (validation_df, sampled_validation_df),
+    "Test": (test_df, sampled_test_df),
+}
+
+for name, (full_df, sample_df) in datasets.items():
+
+    full_counts = {
+        row["target"]: row["count"]
+        for row in full_df.groupBy("target").count().collect()
+    }
+
+    sample_counts = {
+        row["target"]: row["count"]
+        for row in sample_df.groupBy("target").count().collect()
+    }
+
+    full_total = sum(full_counts.values())
+    sample_total = sum(sample_counts.values())
+
+    full_positives = full_counts.get(1, 0)
+    sample_positives = sample_counts.get(1, 0)
+
+    print(f"\n{name}")
+    print(f"  Full rows:       {full_total:,}")
+    print(f"  Sampled rows:    {sample_total:,}")
+    print(f"  Full positives:  {full_positives:,}")
+    print(f"  Sample positives:{sample_positives:,}")
+
+    print(
+        f"  Full target rate: "
+        f"{100 * full_positives / full_total:.2f}%"
+        if full_total else "  Full dataset empty"
+    )
+
+    print(
+        f"  Sample target rate: "
+        f"{100 * sample_positives / sample_total:.2f}%"
+        if sample_total else "  Sample dataset empty"
+    )
+
+    if name == "Train":
+        assert sample_positives == full_positives, (
+            "Training sampling lost positive observations!"
+        )
+    else:
+        assert sample_total <= full_total, (
+            f"{name} sampled rows exceed full rows!"
+        )
+
+        if (
+            RFC_DATA_CONFIG[
+                f"{name.lower()}_sample_pct"
+            ] == 100
+        ):
+            assert sample_total == full_total, (
+                f"{name} should retain all observations!"
+            )
+
+print("\nSampling validation completed successfully.")
