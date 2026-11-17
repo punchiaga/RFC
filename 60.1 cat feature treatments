@@ -1,0 +1,24 @@
+# Step 14: Inspect categorical indicator values
+
+rfc_indicator_check_columns = [
+    "policy_org_bupa_staff",
+    "policy_org_corp_voluntary",
+    "policy_is_hosp_prod_corp",
+    "policy_is_ancl_prod_off_sale",
+    "policy_latest_coverchange_30days",
+    "Ancl_group_NoAncillary",
+    "policy_org_discount_per"
+]
+
+for column in rfc_indicator_check_columns:
+    print(f"\n{column}")
+
+    (
+        rfc_train_prototype_df
+        .groupBy(column)
+        .count()
+        .orderBy(F.desc("count"))
+        .show(10, truncate=False)
+    )
+
+    
