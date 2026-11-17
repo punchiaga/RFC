@@ -1,0 +1,21 @@
+from pyspark.sql import functions as F
+
+# Policy-level split distribution
+policy_split_summary = (
+    policy_split
+    .groupBy("dataset")
+    .agg(F.count("*").alias("policy_count"))
+    .withColumn(
+        "percentage",
+        F.round(
+            F.col("policy_count") * 100
+            / F.sum("policy_count").over(
+                Window.partitionBy()
+            ),
+            2
+        )
+    )
+    .orderBy("dataset")
+)
+
+display(policy_split_summary)
