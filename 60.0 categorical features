@@ -1,3 +1,20 @@
+My observations
+1. Hosp_group_OverseasHospitalOnsale looks like another binary flag. It may not have appeared in our 36 candidates because the prototype contained no Y observations. We should not classify binary features solely from sampled values.
+2. policy_org_discount_per needs conversion to numeric. We previously identified this, and it should be consistently transformed for training, validation and scoring.
+3. Eight high-cardinality features are good candidates to defer initially: blr_recent_order_item, policy_latest_call_app_tag, and the six top1/2/3_*_order_item fields. We can revisit frequency encoding or target encoding after the baseline.
+4. sales_channel_code and sales_channel_name may represent the same underlying information. We should inspect whether both are needed.
+5. policy_status_cd requires a point-in-time and business-definition review. A policy's status at the snapshot may be legitimate, but it could also make the model learn operational states that are inappropriate for scoring.
+6. policy_latest_call_last_leg may be relevant to customer behaviour, but we must verify it reflects information available before the snapshot.
+
+
+
+
+
+
+
+
+
+
 # Cell 25: Identify remaining categorical features
 
 rfc_categorical_columns = [
