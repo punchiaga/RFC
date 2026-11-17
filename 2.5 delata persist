@@ -1,0 +1,44 @@
+# Step 8: Persist RFC datasets
+
+RFC_OUTPUT_DATASETS = {
+    "train": (train_df, RFC_TRAIN_TABLE),
+    "validation": (validation_df, RFC_VALIDATION_TABLE),
+    "test": (test_df, RFC_TEST_TABLE),
+    "train_sampled": (sampled_train_df, RFC_TRAIN_SAMPLED_TABLE),
+    "validation_sampled": (
+        sampled_validation_df,
+        RFC_VALIDATION_SAMPLED_TABLE
+    ),
+    "test_sampled": (
+        sampled_test_df,
+        RFC_TEST_SAMPLED_TABLE
+    ),
+}
+
+# Prevent accidental overwrites
+existing_tables = [
+    table_name
+    for _, table_name in RFC_OUTPUT_DATASETS.values()
+    if spark.catalog.tableExists(table_name)
+]
+
+if existing_tables:
+    raise RuntimeError(
+        "Output tables already exist. No tables will be written:\n"
+        + "\n".join(existing_tables)
+    )
+
+# Check for duplicate output destinations
+output_names = [
+    table_name for _, table_name in RFC_OUTPUT_DATASETS.values()
+]
+
+assert len(output_names) == len(set(output_names)), (
+    "Duplicate output table names detected"
+)
+
+print("Output table validation passed.")
+print("Tables to create:")
+
+for dataset_name, (_, table_name) in RFC_OUTPUT_DATASETS.items():
+    print(f"  {dataset_name}: {table_name}")
