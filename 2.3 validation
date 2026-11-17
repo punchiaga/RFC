@@ -112,3 +112,51 @@ Test
   Sample target rate: 3.18%
 
 Sampling validation completed successfully.
+
+from pyspark.sql import functions as F
+
+# 1. Check cross-dataset policy overlap
+train_policies = train_df.select("policy_id").distinct()
+val_policies = validation_df.select("policy_id").distinct()
+test_policies = test_df.select("policy_id").distinct()
+
+overlaps = {
+    "Train vs Validation": train_policies.join(
+        val_policies, "policy_id", "inner"
+    ).count(),
+
+    "Train vs Test": train_policies.join(
+        test_policies, "policy_id", "inner"
+    ).count(),
+
+    "Validation vs Test": val_policies.join(
+        test_policies, "policy_id", "inner"
+    ).count()
+}
+
+for name, count in overlaps.items():
+    print(f"{name} overlap: {count:,}")
+    assert count == 0, f"Policy leakage detected: {name}"
+
+# 2. Check uniqueness of policy + snapshot
+for name, df in {
+    "Train": train_df,
+    "Validation": validation_df,
+    "Test": test_df
+}.items():
+
+    duplicates = (
+        df.groupBy("policy_id", "effective_dttm")
+          .count()
+          .filter(F.col("count") > 1)
+          .limit(1)
+          .count()
+    )
+
+    print(f"{name} duplicate policy-snapshot keys: {duplicates}")
+
+    assert duplicates == 0, (
+        f"{name} contains duplicate policy-snapshot observations"
+    )
+
+print("\nPolicy isolation and snapshot uniqueness checks passed.")
