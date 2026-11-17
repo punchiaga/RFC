@@ -125,3 +125,10 @@ top3_lifetime_order_item: 146
 top2_24m_order_item: 142
 top3_24m_order_item: 138
 policy_latest_call_app_tag: 105
+
+# Step 13: Inspect RFC categorical features
+
+print(f"Categorical feature count: {len(rfc_categorical_columns)}")
+
+for i, column in enumerate(sorted(rfc_categorical_columns), start=1):
+    print(f"{i:02d}. {column}")
