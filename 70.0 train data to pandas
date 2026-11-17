@@ -67,5 +67,19 @@ print("\nUnexpected object column types:")
 for dtype, count in type_summary.items():
     print(f"{dtype}: {count}")
 
+
+Total object columns: 187
+Expected categorical columns: 21
+Unexpected object columns: 166
+
+Unexpected object column types:
+Decimal: 164
+all_null: 2
+
+Example unexpected columns:
+['avg_lhc_person_age', 'blr_recent_total_face_value', 'blr_recent_total_paid', 'cash_rate_target', 'housing_lending_rate', 'max_lhc_person_age'
+, 'min_lhc_person_age', 'order_count_lifetime_per_month_max', 'order_count_lifetime_per_month_min', 'order_count_lifetime_per_month_sum'
+, 'order_face_value_12m_max', 'order_face_value_12m_min', 'order_face_value_12m_sum', 'order_face_value_1m_max', 'order_face_value_1m_min']
+
 print("\nExample unexpected columns:")
 print(unexpected_object_columns[:15])
