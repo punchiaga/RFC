@@ -25,3 +25,43 @@ print("Full sampled training rows:", f"{total_rows:,}")
 print("Prototype rows:", f"{rfc_train_prototype_df.count():,}")
 
 rfc_train_prototype_df.groupBy("target").count().show()
+
+# Step 12: Inspect RFC prototype feature types
+
+from pyspark.sql.types import (
+    StringType,
+    NumericType,
+    DateType,
+    TimestampType
+)
+
+rfc_schema = {
+    field.name: field.dataType
+    for field in rfc_train_prototype_df.schema.fields
+}
+
+rfc_categorical_columns = [
+    c for c in rfc_model_feature_columns
+    if isinstance(rfc_schema[c], StringType)
+]
+
+rfc_numeric_columns = [
+    c for c in rfc_model_feature_columns
+    if isinstance(rfc_schema[c], NumericType)
+]
+
+rfc_temporal_columns_remaining = [
+    c for c in rfc_model_feature_columns
+    if isinstance(rfc_schema[c], (DateType, TimestampType))
+]
+
+print("Categorical features:", len(rfc_categorical_columns))
+print("Numeric features:", len(rfc_numeric_columns))
+print("Temporal features:", len(rfc_temporal_columns_remaining))
+
+print(
+    "Total classified features:",
+    len(rfc_categorical_columns)
+    + len(rfc_numeric_columns)
+    + len(rfc_temporal_columns_remaining)
+)
