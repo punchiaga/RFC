@@ -85,3 +85,30 @@ for name, (full_df, sample_df) in datasets.items():
             )
 
 print("\nSampling validation completed successfully.")
+
+
+Train
+  Full rows:       17,934,606
+  Sampled rows:    1,434,220
+  Full positives:  565,589
+  Sample positives:565,589
+  Full target rate: 3.15%
+  Sample target rate: 39.44%
+
+Validation
+  Full rows:       1,998,356
+  Sampled rows:    1,998,356
+  Full positives:  62,908
+  Sample positives:62,908
+  Full target rate: 3.15%
+  Sample target rate: 3.15%
+
+Test
+  Full rows:       2,216,521
+  Sampled rows:    2,216,521
+  Full positives:  70,375
+  Sample positives:70,375
+  Full target rate: 3.18%
+  Sample target rate: 3.18%
+
+Sampling validation completed successfully.
