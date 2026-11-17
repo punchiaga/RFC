@@ -1,0 +1,51 @@
+# Step 18: Refine RFC feature groups
+
+RFC_HIGH_CARDINALITY_COLUMNS = [
+    "blr_recent_order_item",
+    "policy_latest_call_app_tag",
+    "top1_24m_order_item",
+    "top1_lifetime_order_item",
+    "top2_24m_order_item",
+    "top2_lifetime_order_item",
+    "top3_24m_order_item",
+    "top3_lifetime_order_item",
+]
+
+RFC_NUMERIC_STRING_COLUMNS = [
+    "policy_org_discount_per"
+]
+
+RFC_ADDITIONAL_BINARY_COLUMNS = [
+    "Hosp_group_OverseasHospitalOnsale"
+]
+
+rfc_binary_columns = sorted(
+    set(rfc_binary_candidate_columns)
+    | set(RFC_ADDITIONAL_BINARY_COLUMNS)
+)
+
+rfc_onehot_columns = sorted(
+    set(rfc_categorical_columns)
+    - set(rfc_binary_columns)
+    - set(RFC_HIGH_CARDINALITY_COLUMNS)
+    - set(RFC_NUMERIC_STRING_COLUMNS)
+)
+
+rfc_numeric_model_columns = sorted(
+    set(rfc_numeric_columns)
+    | set(RFC_NUMERIC_STRING_COLUMNS)
+)
+
+print("Binary indicators:", len(rfc_binary_columns))
+print("One-hot categorical features:", len(rfc_onehot_columns))
+print("Numeric features:", len(rfc_numeric_model_columns))
+print("Deferred high-cardinality features:", len(RFC_HIGH_CARDINALITY_COLUMNS))
+
+assert (
+    len(rfc_binary_columns)
+    + len(rfc_onehot_columns)
+    + len(rfc_numeric_model_columns)
+    + len(RFC_HIGH_CARDINALITY_COLUMNS)
+) == len(rfc_model_feature_columns)
+
+print("Feature grouping validated successfully.")
