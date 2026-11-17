@@ -1,0 +1,27 @@
+from pyspark.sql import functions as F
+
+# Read persisted sampled training data
+rfc_train_df = spark.table(RFC_TRAIN_SAMPLED_TABLE)
+
+# Prototype configuration
+RFC_PROTOTYPE_SIZE = 10_000
+RFC_PROTOTYPE_SEED = 42
+
+# Approximate deterministic sampling
+total_rows = rfc_train_df.count()
+
+sample_fraction = min(
+    1.0,
+    RFC_PROTOTYPE_SIZE / total_rows
+)
+
+rfc_train_prototype_df = rfc_train_df.sample(
+    withReplacement=False,
+    fraction=sample_fraction,
+    seed=RFC_PROTOTYPE_SEED
+)
+
+print("Full sampled training rows:", f"{total_rows:,}")
+print("Prototype rows:", f"{rfc_train_prototype_df.count():,}")
+
+rfc_train_prototype_df.groupBy("target").count().show()
