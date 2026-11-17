@@ -1,0 +1,19 @@
+# Step 21: Convert prepared RFC prototype to pandas
+
+rfc_prototype_pd = (
+    rfc_train_prototype_prepared_df
+    .select(*RFC_ACTIVE_FEATURE_COLUMNS, "target")
+    .toPandas()
+)
+
+X_train = rfc_prototype_pd[RFC_ACTIVE_FEATURE_COLUMNS].copy()
+y_train = rfc_prototype_pd["target"].astype(int)
+
+print("Training features:", X_train.shape)
+print("Training target:", y_train.shape)
+
+print("\nTarget distribution:")
+print(y_train.value_counts())
+
+print("\nData types:")
+print(X_train.dtypes.value_counts())
