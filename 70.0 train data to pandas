@@ -32,3 +32,40 @@ object     187
 int64      134
 int32        9
 dtype: int64
+
+# Step 22: Inspect pandas object column types
+
+from collections import Counter
+
+object_columns = X_train.select_dtypes(
+    include=["object"]
+).columns.tolist()
+
+expected_categorical = set(rfc_onehot_columns)
+
+unexpected_object_columns = [
+    c for c in object_columns
+    if c not in expected_categorical
+]
+
+print("Total object columns:", len(object_columns))
+print("Expected categorical columns:", len(expected_categorical))
+print("Unexpected object columns:", len(unexpected_object_columns))
+
+# Inspect actual Python types in unexpected object columns
+type_summary = Counter()
+
+for c in unexpected_object_columns:
+    non_null = X_train[c].dropna()
+
+    if not non_null.empty:
+        type_summary[type(non_null.iloc[0]).__name__] += 1
+    else:
+        type_summary["all_null"] += 1
+
+print("\nUnexpected object column types:")
+for dtype, count in type_summary.items():
+    print(f"{dtype}: {count}")
+
+print("\nExample unexpected columns:")
+print(unexpected_object_columns[:15])
