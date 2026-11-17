@@ -137,3 +137,36 @@ dtype: int64
 
 All-null numeric columns:
 ['Hosp_group_OverseasHospitalOnsale', 'policy_future_org_from_date', 'policy_future_org_to_date', 'policy_national_pharmacy_product_id', 'policy_pharmacy_product_id', 'policy_pharmacy_product_rank']
+
+# Step 24: Exclude product identifiers from RFC prototype
+
+RFC_EXCLUDED_PRODUCT_ID_COLUMNS = [
+    "policy_national_pharmacy_product_id",
+    "policy_pharmacy_product_id",
+]
+
+# Update numeric feature group
+rfc_numeric_model_columns = sorted(
+    set(rfc_numeric_model_columns)
+    - set(RFC_EXCLUDED_PRODUCT_ID_COLUMNS)
+)
+
+# Rebuild active feature list
+RFC_ACTIVE_FEATURE_COLUMNS = (
+    rfc_binary_columns
+    + rfc_onehot_columns
+    + rfc_numeric_model_columns
+    + ["policy_org_discount_per_missing"]
+)
+
+# Update existing pandas prototype
+X_train = X_train[RFC_ACTIVE_FEATURE_COLUMNS].copy()
+
+assert X_train.shape[1] == len(RFC_ACTIVE_FEATURE_COLUMNS)
+assert len(RFC_ACTIVE_FEATURE_COLUMNS) == len(set(RFC_ACTIVE_FEATURE_COLUMNS))
+
+print("Excluded product IDs:", RFC_EXCLUDED_PRODUCT_ID_COLUMNS)
+print("Numeric features:", len(rfc_numeric_model_columns) + 1 + len(rfc_binary_columns))
+print("Categorical features:", len(rfc_onehot_columns))
+print("Total active features:", len(RFC_ACTIVE_FEATURE_COLUMNS))
+print("Training shape:", X_train.shape)
