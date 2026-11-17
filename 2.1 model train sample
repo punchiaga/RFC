@@ -1,0 +1,54 @@
+from pyspark.sql import functions as F
+
+# Read split configuration
+train_pct = RFC_DATA_CONFIG["train_pct"]
+validation_pct = RFC_DATA_CONFIG["validation_pct"]
+test_pct = RFC_DATA_CONFIG["test_pct"]
+seed = RFC_DATA_CONFIG["random_seed"]
+
+# Split thresholds
+train_threshold = train_pct
+validation_threshold = train_pct + validation_pct
+
+# Read source data
+source_df = spark.table(RFC_SOURCE_TABLE)
+
+# Assign each policy deterministically to a split
+policy_split_df = (
+    source_df
+    .select("policy_id")
+    .distinct()
+    .withColumn(
+        "split_bucket",
+        F.pmod(
+            F.xxhash64(F.col("policy_id"), F.lit(seed)),
+            F.lit(100)
+        )
+    )
+    .withColumn(
+        "dataset_split",
+        F.when(
+            F.col("split_bucket") < train_threshold,
+            F.lit("train")
+        )
+        .when(
+            F.col("split_bucket") < validation_threshold,
+            F.lit("validation")
+        )
+        .otherwise(F.lit("test"))
+    )
+)
+
+# Restore all snapshots for each policy
+split_df = source_df.join(
+    policy_split_df.select("policy_id", "dataset_split"),
+    on="policy_id",
+    how="inner"
+)
+
+train_df = split_df.filter(F.col("dataset_split") == "train").drop("dataset_split")
+validation_df = split_df.filter(F.col("dataset_split") == "validation").drop("dataset_split")
+test_df = split_df.filter(F.col("dataset_split") == "test").drop("dataset_split")
+
+print(f"Configured split: Train {train_pct}% | Validation {validation_pct}% | Test {test_pct}%")
+print("Policy-level deterministic split created successfully")
