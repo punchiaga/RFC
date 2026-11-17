@@ -160,3 +160,46 @@ for name, df in {
     )
 
 print("\nPolicy isolation and snapshot uniqueness checks passed.")
+
+# Step 10: Verify persisted RFC Delta tables
+
+RFC_EXPECTED_COUNTS = {
+    "train": (17_934_606, 565_589),
+    "validation": (1_998_356, 62_908),
+    "test": (2_216_521, 70_375),
+    "train_sampled": (1_434_220, 565_589),
+    "validation_sampled": (1_998_356, 62_908),
+    "test_sampled": (2_216_521, 70_375),
+}
+
+for dataset_name, (_, table_name) in RFC_OUTPUT_DATASETS.items():
+
+    saved_df = spark.table(table_name)
+
+    counts = {
+        row["target"]: row["count"]
+        for row in saved_df.groupBy("target").count().collect()
+    }
+
+    actual_rows = sum(counts.values())
+    actual_positives = counts.get(1, 0)
+
+    expected_rows, expected_positives = RFC_EXPECTED_COUNTS[dataset_name]
+
+    assert actual_rows == expected_rows, (
+        f"{dataset_name}: Row count mismatch! "
+        f"Expected {expected_rows}, got {actual_rows}"
+    )
+
+    assert actual_positives == expected_positives, (
+        f"{dataset_name}: Positive count mismatch! "
+        f"Expected {expected_positives}, got {actual_positives}"
+    )
+
+    print(
+        f"{dataset_name}: "
+        f"Rows={actual_rows:,}, "
+        f"Positives={actual_positives:,} — PASS"
+    )
+
+print("\nAll six persisted RFC datasets verified successfully.")
