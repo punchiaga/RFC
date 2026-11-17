@@ -46,3 +46,20 @@ rfc_train_prototype_prepared_df.select(
     "policy_org_discount_per",
     "policy_org_discount_per_missing"
 ).show(10, truncate=False)
+
+RFC prototype feature transformations completed.
++---------------------+--------------------------------+-----------------------+-------------------------------+
+|policy_org_bupa_staff|policy_latest_coverchange_30days|policy_org_discount_per|policy_org_discount_per_missing|
++---------------------+--------------------------------+-----------------------+-------------------------------+
+|NULL                 |NULL                            |NULL                   |1.0                            |
+|NULL                 |NULL                            |NULL                   |1.0                            |
+|NULL                 |NULL                            |5.0                    |0.0                            |
+|NULL                 |NULL                            |NULL                   |1.0                            |
+|NULL                 |NULL                            |NULL                   |1.0                            |
+|NULL                 |NULL                            |NULL                   |1.0                            |
+|NULL                 |NULL                            |0.0                    |0.0                            |
+|NULL                 |NULL                            |NULL                   |1.0                            |
+|NULL                 |NULL                            |NULL                   |1.0                            |
+|NULL                 |NULL                            |NULL                   |1.0                            |
++---------------------+--------------------------------+-----------------------+-------------------------------+
+only showing top 10 rows
