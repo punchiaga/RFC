@@ -201,3 +201,40 @@ Categorical feature count: 67
 
 for i, column in enumerate(sorted(rfc_categorical_columns), start=1):
     print(f"{i:02d}. {column}")
+
+Binary indicators: 36
+Remaining categorical features: 31
+Numeric features: 633
+
+Remaining categorical columns:
+Hosp_group_OverseasHospitalOnsale
+blr_recent_order_item
+person_location_state
+policy_cover_type
+policy_family_type
+policy_family_type_code
+policy_is_ancl_prod_market_seg
+policy_is_ancl_prod_tier
+policy_is_hosp_prod_market_seg
+policy_is_hosp_prod_tier
+policy_is_mbr_type_cvr_type
+policy_latest_call_app_tag
+policy_latest_call_last_leg
+policy_latest_payment_method
+policy_lifestage_segment
+policy_lifestage_segment_group
+policy_lifestage_sub_segment
+policy_org_discount_per
+policy_org_sub_type
+policy_org_type
+policy_payment_arrangement
+policy_person_membership_details_relationship
+policy_status_cd
+sales_channel_code
+sales_channel_name
+top1_24m_order_item
+top1_lifetime_order_item
+top2_24m_order_item
+top2_lifetime_order_item
+top3_24m_order_item
+top3_lifetime_order_item
