@@ -175,3 +175,22 @@ Hosp_group_RetailHospitalOnsale: string
 MEMBERSHIP_STATUS_SUSPENDED: string
 
 Non-numeric feature count: 111
+
+# Step 17: Finalise preliminary RFC feature groups
+
+rfc_binary_columns = sorted(rfc_binary_candidate_columns)
+
+rfc_remaining_categorical_columns = sorted(
+    set(rfc_categorical_columns) - set(rfc_binary_columns)
+)
+
+print("Binary indicators:", len(rfc_binary_columns))
+print(
+    "Remaining categorical features:",
+    len(rfc_remaining_categorical_columns)
+)
+print("Numeric features:", len(rfc_numeric_columns))
+
+print("\nRemaining categorical columns:")
+for c in rfc_remaining_categorical_columns:
+    print(c)
