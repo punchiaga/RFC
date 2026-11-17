@@ -83,3 +83,43 @@ Example unexpected columns:
 
 print("\nExample unexpected columns:")
 print(unexpected_object_columns[:15])
+
+# Step 23: Fix numeric pandas data types
+
+import pandas as pd
+
+# All numeric model inputs, including binary indicators
+rfc_all_numeric_columns = (
+    rfc_binary_columns
+    + rfc_numeric_model_columns
+    + ["policy_org_discount_per_missing"]
+)
+
+# Convert Spark Decimal objects and other numeric representations
+for c in rfc_all_numeric_columns:
+    X_train[c] = pd.to_numeric(X_train[c], errors="coerce")
+
+# Validate that only intended categorical columns remain as objects
+remaining_object_columns = set(
+    X_train.select_dtypes(include=["object"]).columns
+)
+
+assert remaining_object_columns == set(rfc_onehot_columns), (
+    "Unexpected object columns remain: "
+    f"{sorted(remaining_object_columns - set(rfc_onehot_columns))}"
+)
+
+print("Numeric columns:", len(rfc_all_numeric_columns))
+print("Categorical columns:", len(rfc_onehot_columns))
+print("Total features:", X_train.shape[1])
+
+print("\nPandas data types:")
+print(X_train.dtypes.value_counts())
+
+print("\nAll-null numeric columns:")
+print(
+    X_train[rfc_all_numeric_columns]
+    .columns[
+        X_train[rfc_all_numeric_columns].isna().all()
+    ].tolist()
+)
