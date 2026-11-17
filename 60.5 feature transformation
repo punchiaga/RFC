@@ -1,0 +1,48 @@
+# Step 19: Reusable RFC feature transformations
+
+from pyspark.sql import functions as F
+
+def prepare_rfc_features(df):
+
+    # Convert Y/N indicators to numeric
+    for c in rfc_binary_columns:
+        value = F.upper(F.trim(F.col(c)))
+
+        df = df.withColumn(
+            c,
+            F.when(value == "Y", F.lit(1.0))
+             .when(value == "N", F.lit(0.0))
+             .otherwise(F.lit(None).cast("double"))
+        )
+
+    # Convert numeric string safely
+    df = df.withColumn(
+        "policy_org_discount_per",
+        F.expr("try_cast(policy_org_discount_per AS DOUBLE)")
+    )
+
+    # Add missingness indicator
+    df = df.withColumn(
+        "policy_org_discount_per_missing",
+        F.when(
+            F.col("policy_org_discount_per").isNull(),
+            F.lit(1.0)
+        ).otherwise(F.lit(0.0))
+    )
+
+    return df
+
+
+# Apply to prototype only
+rfc_train_prototype_prepared_df = prepare_rfc_features(
+    rfc_train_prototype_df
+)
+
+print("RFC prototype feature transformations completed.")
+
+rfc_train_prototype_prepared_df.select(
+    "policy_org_bupa_staff",
+    "policy_latest_coverchange_30days",
+    "policy_org_discount_per",
+    "policy_org_discount_per_missing"
+).show(10, truncate=False)
