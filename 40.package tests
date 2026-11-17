@@ -15,3 +15,10 @@ print("XGBoost:", xgboost.__version__)
 print("pandas:", pd.__version__)
 print("MLflow:", mlflow.__version__)
 print("Churn-compatible imports: OK")
+
+%pip install -q \
+    xgboost==2.1.4 \
+    scikit-learn==1.3.0 \
+    category_encoders==2.6.0
+
+%pip install -q optuna==4.5.0 shap==0.49.1
