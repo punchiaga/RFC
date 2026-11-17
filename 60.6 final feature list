@@ -1,1 +1,30 @@
+# Step 20: Finalise RFC prototype feature columns
 
+RFC_ACTIVE_FEATURE_COLUMNS = (
+    rfc_binary_columns
+    + rfc_onehot_columns
+    + rfc_numeric_model_columns
+    + ["policy_org_discount_per_missing"]
+)
+
+# Validate no duplicate feature names
+assert len(RFC_ACTIVE_FEATURE_COLUMNS) == len(
+    set(RFC_ACTIVE_FEATURE_COLUMNS)
+), "Duplicate feature names detected"
+
+# Validate all features exist after transformation
+missing_features = (
+    set(RFC_ACTIVE_FEATURE_COLUMNS)
+    - set(rfc_train_prototype_prepared_df.columns)
+)
+
+assert not missing_features, (
+    f"Missing features: {sorted(missing_features)}"
+)
+
+print("Binary features:", len(rfc_binary_columns))
+print("One-hot features:", len(rfc_onehot_columns))
+print("Numeric features:", len(rfc_numeric_model_columns) + 1)
+print("Total active features:", len(RFC_ACTIVE_FEATURE_COLUMNS))
+print("Deferred high-cardinality features:", len(RFC_HIGH_CARDINALITY_COLUMNS))
+print("Feature validation passed.")
