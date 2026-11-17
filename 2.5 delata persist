@@ -40,5 +40,22 @@ assert len(output_names) == len(set(output_names)), (
 print("Output table validation passed.")
 print("Tables to create:")
 
+# Step 9: Persist RFC datasets to Delta tables
+
+for dataset_name, (df, table_name) in RFC_OUTPUT_DATASETS.items():
+
+    print(f"Writing {dataset_name}: {table_name}")
+
+    (
+        df.write
+        .format("delta")
+        .mode("errorifexists")
+        .saveAsTable(table_name)
+    )
+
+    print(f"Completed: {dataset_name}")
+
+print("\nAll six RFC Delta tables created successfully.")
+
 for dataset_name, (_, table_name) in RFC_OUTPUT_DATASETS.items():
     print(f"  {dataset_name}: {table_name}")
