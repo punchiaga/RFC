@@ -1,0 +1,17 @@
+# Cell 30C: Verify Churn-compatible training libraries
+
+import sklearn
+import xgboost
+import pandas as pd
+import mlflow
+
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.pipeline import Pipeline
+from xgboost import XGBClassifier
+
+print("scikit-learn:", sklearn.__version__)
+print("XGBoost:", xgboost.__version__)
+print("pandas:", pd.__version__)
+print("MLflow:", mlflow.__version__)
+print("Churn-compatible imports: OK")
