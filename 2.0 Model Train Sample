@@ -1,0 +1,769 @@
+# Databricks notebook source
+# MAGIC %pip install bupaml==2.1.4
+# MAGIC # test 2.1.5 separately for Monitoring! Seems 2.1.5 not compatible 
+
+# COMMAND ----------
+
+# DBTITLE 1,Install  libraries
+# MAGIC %pip install -q \
+# MAGIC     xgboost==2.1.4 \
+# MAGIC     scikit-learn==1.3.0 \
+# MAGIC     category_encoders==2.6.0 \
+# MAGIC     optuna==4.5.0 \
+# MAGIC     shap==0.49.1
+
+# COMMAND ----------
+
+dbutils.widgets.removeAll()
+dbutils.library.restartPython()
+
+# COMMAND ----------
+
+spark.conf.set("spark.sql.adaptive.enabled", "true")
+
+# COMMAND ----------
+
+dbutils.widgets.text("batch_process_dttm","")
+dbutils.widgets.text("batch_process_id","20261020105807") #set to empty string to create a new (20261020105807 test)
+dbutils.widgets.text("user_prefix","NS")
+dbutils.widgets.text("lakehouse_catalog","bdp4_prod_lh")
+dbutils.widgets.text("fs_schema","ml_hi_feature_store")
+dbutils.widgets.text("ml_catalog","bdp4_prod_ml_build")
+dbutils.widgets.text("ml_schema","hi_customer_right_fit_cover_data")
+dbutils.widgets.text("train_start_date", "2025-01-01")
+dbutils.widgets.text("num_of_months", "12")
+dbutils.widgets.text("model_name","rfc")
+
+# COMMAND ----------
+
+batch_process_id = dbutils.widgets.get("batch_process_id")
+user_prefix = dbutils.widgets.get("user_prefix")
+lakehouse_catalog = dbutils.widgets.get("lakehouse_catalog")
+ml_catalog = dbutils.widgets.get("ml_catalog")
+ml_schema = dbutils.widgets.get("ml_schema")
+fs_schema = dbutils.widgets.get("fs_schema")
+train_start_date = dbutils.widgets.get("train_start_date")
+num_of_months = dbutils.widgets.get("num_of_months")
+model_name = dbutils.widgets.get("model_name")
+
+# COMMAND ----------
+
+from functools import reduce
+from BupaML import BupaModel
+from BupaML.ml.utils import generate_batch_process_dttm
+from databricks.feature_engineering import FeatureLookup
+from databricks.feature_engineering.client import FeatureEngineeringClient
+from pyspark.sql import functions as F
+from pyspark.sql.types import *
+from pyspark.sql.functions import col, lit, to_date, when, floor, datediff, to_timestamp
+
+# COMMAND ----------
+
+# Drift metrics can be accessed by importing BupaML.ml.drift
+# For example:
+# from BupaML.ml.drift import create_drift_report, create_profile_report
+
+# COMMAND ----------
+
+df = spark.table("bdp4_prod_ml_build.hi_customer_right_fit_cover_data.rfc_training_20261020105807_test_1_NS")
+df_filtered = df.filter(col("effective_dttm") == "2025-12-31")
+df_filtered.createOrReplaceTempView("rfc_training_view")
+display(df_filtered)
+
+# COMMAND ----------
+
+# from BupaML.ml.drift import create_profile_report
+
+# profile_df = create_profile_report(
+#     model_name="test_rfc",
+#     primary_table="rfc_training_view",
+#     evaluation_process_id=f"{batch_process_id}",
+#     save_report=False
+# )
+
+# display(profile_df)
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC -- select * from bdp4_prod_ml_build.hi_customer_right_fit_cover_data.rfc_training_20261020105807_test_1_NS limit 10;
+# MAGIC select count(distinct policy_id) as dist_ids from bdp4_prod_ml_build.hi_customer_right_fit_cover_data.rfc_training_20261020105807_test_1_NS
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC # Sampling
+
+# COMMAND ----------
+
+# DBTITLE 1,Train/test/val
+
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC 1. Split policies deterministically: Assign each distinct policy_id to Train / Validation / Test using a fixed hash. This prevents policy leakage and makes the split reproducible.
+# MAGIC
+# MAGIC 2. Restore all snapshots: Join the assigned policy_ids back to the full RFC source so each policy retains all associated effective_dttm snapshots.
+# MAGIC
+# MAGIC 3. Validate the split: Confirm zero policy_id overlap across datasets, no source rows are lost, the monthly distributions are sensible, and reruns produce the same assignments.
+
+# COMMAND ----------
+
+from pyspark.sql import functions as F
+
+schema = "bdp4_prod_ml_build.hi_customer_right_fit_cover_data"
+
+source_table = (
+    f"{schema}.rfc_training_20261020105807_test_1_NS"
+)
+
+# One record per policy
+policy_ids = (
+    spark.table(source_table)
+    .select("policy_id")
+    .where(F.col("policy_id").isNotNull())
+    .distinct()
+)
+
+# Deterministic policy-level split
+policy_split = (
+    policy_ids
+    .withColumn(
+        "split_bucket",
+        F.pmod(
+            F.xxhash64(
+                F.col("policy_id"),
+                F.lit(42)
+            ),
+            F.lit(10000)
+        )
+    )
+    .withColumn(
+        "dataset",
+        F.when(F.col("split_bucket") < 8100, "train")
+         .when(F.col("split_bucket") < 9000, "validation")
+         .otherwise("test")
+    )
+)
+
+display(
+    policy_split
+    .groupBy("dataset")
+    .agg(F.count("*").alias("policies"))
+    .orderBy("dataset")
+)
+
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ### Step 2: Bring back all snapshots
+
+# COMMAND ----------
+
+# This preserves every source snapshot belonging to each assigned policy.
+
+source_df = spark.table(source_table)
+
+split_df = (
+    source_df
+    .join(
+        policy_split.select("policy_id", "dataset"),
+        on="policy_id",
+        how="inner"
+    )
+)
+
+train_df = split_df.filter(F.col("dataset") == "train").drop("dataset")
+validation_df = split_df.filter(F.col("dataset") == "validation").drop("dataset")
+test_df = split_df.filter(F.col("dataset") == "test").drop("dataset")
+
+# COMMAND ----------
+
+from pyspark.sql import functions as F
+
+# 1. Row and distinct policy counts
+for name, df in [
+    ("train", train_df),
+    ("validation", validation_df),
+    ("test", test_df),
+]:
+    result = df.agg(
+        F.count("*").alias("rows"),
+        F.countDistinct("policy_id").alias("policies")
+    )
+
+    print(name)
+    result.show()
+
+
+# 2. Check policy leakage between datasets
+train_val_overlap = (
+    train_df.select("policy_id").distinct()
+    .join(
+        validation_df.select("policy_id").distinct(),
+        "policy_id",
+        "inner"
+    )
+    .count()
+)
+
+train_test_overlap = (
+    train_df.select("policy_id").distinct()
+    .join(
+        test_df.select("policy_id").distinct(),
+        "policy_id",
+        "inner"
+    )
+    .count()
+)
+
+val_test_overlap = (
+    validation_df.select("policy_id").distinct()
+    .join(
+        test_df.select("policy_id").distinct(),
+        "policy_id",
+        "inner"
+    )
+    .count()
+)
+
+print("Train / Validation overlap:", train_val_overlap)
+print("Train / Test overlap:", train_test_overlap)
+print("Validation / Test overlap:", val_test_overlap)
+
+
+# 3. Confirm no source rows were lost
+source_rows = spark.table(source_table).count()
+
+split_rows = (
+    train_df.count()
+    + validation_df.count()
+    + test_df.count()
+)
+
+print("Source rows:", source_rows)
+print("Split rows:", split_rows)
+print("Rows match:", source_rows == split_rows)
+
+# COMMAND ----------
+
+# DBTITLE 1,Persist the three DataFrames
+schema = "bdp4_prod_ml_build.hi_customer_right_fit_cover_data"
+
+train_table = f"{schema}.rfc_training_20261020105807_train"
+validation_table = f"{schema}.rfc_training_20261020105807_validation"
+test_table = f"{schema}.rfc_training_20261020105807_test"
+
+
+# Save Train
+(
+    train_df.write
+    .format("delta")
+    .mode("overwrite")
+    .saveAsTable(train_table)
+)
+
+print(f"Created: {train_table}", flush=True)
+
+
+# Save Validation
+(
+    validation_df.write
+    .format("delta")
+    .mode("overwrite")
+    .saveAsTable(validation_table)
+)
+
+print(f"Created: {validation_table}", flush=True)
+
+
+# Save Test
+(
+    test_df.write
+    .format("delta")
+    .mode("overwrite")
+    .saveAsTable(test_table)
+)
+
+print(f"Created: {test_table}", flush=True)
+
+# COMMAND ----------
+
+# DBTITLE 1,Test for any overlap
+from pyspark.sql import functions as F
+
+schema = "bdp4_prod_ml_build.hi_customer_right_fit_cover_data"
+
+source_table = f"{schema}.rfc_training_20261020105807_test_1_NS"
+train_table = f"{schema}.rfc_training_20261020105807_train"
+validation_table = f"{schema}.rfc_training_20261020105807_validation"
+test_table = f"{schema}.rfc_training_20261020105807_test"
+
+train = spark.table(train_table)
+validation = spark.table(validation_table)
+test = spark.table(test_table)
+
+
+# 1. Row and policy counts
+for name, df in [
+    ("train", train),
+    ("validation", validation),
+    ("test", test),
+]:
+    print(name)
+    df.agg(
+        F.count("*").alias("rows"),
+        F.countDistinct("policy_id").alias("policies")
+    ).show()
+
+
+# 2. Policy overlap
+train_val_overlap = (
+    train.select("policy_id").distinct()
+    .join(validation.select("policy_id").distinct(), "policy_id", "inner")
+    .count()
+)
+
+train_test_overlap = (
+    train.select("policy_id").distinct()
+    .join(test.select("policy_id").distinct(), "policy_id", "inner")
+    .count()
+)
+
+val_test_overlap = (
+    validation.select("policy_id").distinct()
+    .join(test.select("policy_id").distinct(), "policy_id", "inner")
+    .count()
+)
+
+print("Train / Validation overlap:", train_val_overlap)
+print("Train / Test overlap:", train_test_overlap)
+print("Validation / Test overlap:", val_test_overlap)
+
+
+# 3. Check all source rows are preserved
+source_rows = spark.table(source_table).count()
+
+split_rows = (
+    train.count()
+    + validation.count()
+    + test.count()
+)
+
+print("Source rows:", source_rows)
+print("Split rows:", split_rows)
+print("Rows match:", source_rows == split_rows)
+
+# COMMAND ----------
+
+# DBTITLE 1,Check reproducibility
+from pyspark.sql import functions as F
+
+schema = "bdp4_prod_ml_build.hi_customer_right_fit_cover_data"
+
+source_table = f"{schema}.rfc_training_20261020105807_test_1_NS"
+train_table = f"{schema}.rfc_training_20261020105807_train"
+validation_table = f"{schema}.rfc_training_20261020105807_validation"
+test_table = f"{schema}.rfc_training_20261020105807_test"
+
+
+# Recreate assignment using the SAME hash logic and seed
+rerun_split = (
+    spark.table(source_table)
+    .select("policy_id")
+    .distinct()
+    .withColumn(
+        "split_bucket",
+        F.pmod(
+            F.xxhash64(
+                F.col("policy_id"),
+                F.lit(42)
+            ),
+            F.lit(10000)
+        )
+    )
+    .withColumn(
+        "dataset",
+        F.when(F.col("split_bucket") < 8100, "train")
+         .when(F.col("split_bucket") < 9000, "validation")
+         .otherwise("test")
+    )
+    .select("policy_id", "dataset")
+)
+
+
+# Actual assignment from persisted tables
+saved_split = (
+    spark.table(train_table)
+    .select("policy_id")
+    .distinct()
+    .withColumn("dataset", F.lit("train"))
+
+    .unionByName(
+        spark.table(validation_table)
+        .select("policy_id")
+        .distinct()
+        .withColumn("dataset", F.lit("validation"))
+    )
+
+    .unionByName(
+        spark.table(test_table)
+        .select("policy_id")
+        .distinct()
+        .withColumn("dataset", F.lit("test"))
+    )
+)
+
+
+# Compare expected vs persisted assignment
+differences = (
+    rerun_split
+    .exceptAll(saved_split)
+    .unionByName(
+        saved_split.exceptAll(rerun_split)
+    )
+    .count()
+)
+
+print("Assignment differences:", differences)
+print("Deterministic split reproduced:", differences == 0)
+
+# COMMAND ----------
+
+# DBTITLE 1,Target Distribution by snapshot
+# check for target ration is consistent across snapshot
+
+from pyspark.sql import functions as F
+
+datasets = [
+    ("train", train),
+    ("validation", validation),
+    ("test", test),
+]
+
+target_summary = None
+
+for name, df in datasets:
+    summary = (
+        df
+        .groupBy("effective_dttm")
+        .agg(
+            F.count("*").alias("rows"),
+            F.sum(F.col("target").cast("long")).alias("target_1")
+        )
+        .withColumn(
+            "target_1_pct",
+            F.round(F.col("target_1") / F.col("rows") * 100, 4)
+        )
+        .withColumn("dataset", F.lit(name))
+        .select(
+            "effective_dttm",
+            "dataset",
+            "rows",
+            "target_1",
+            "target_1_pct"
+        )
+    )
+
+    target_summary = (
+        summary
+        if target_summary is None
+        else target_summary.unionByName(summary)
+    )
+
+display(
+    target_summary.orderBy(
+        "effective_dttm",
+        "dataset"
+    )
+)
+
+# COMMAND ----------
+
+# DBTITLE 1,Samples view
+print("TRAIN")
+display(train.limit(10))
+
+print("VALIDATION")
+display(validation.limit(10))
+
+print("TEST")
+display(test.limit(10))
+
+# COMMAND ----------
+
+# DBTITLE 1,Sampling
+
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC # Secondary sampling configuration
+
+# COMMAND ----------
+
+# DBTITLE 1,Negatgive sampling - Train
+# hash policy_id + effective_dttm here
+
+from pyspark.sql import functions as F
+
+
+schema = "bdp4_prod_ml_build.hi_customer_right_fit_cover_data"
+
+train_table = (
+    f"{schema}.rfc_training_20261020105807_train"
+)
+
+sampled_train_table = (
+    f"{schema}.rfc_training_20261020105807_train_sampled"
+)
+
+# Secondary sampling configuration
+sampling_salt = 42
+bucket_count = 10000
+negative_threshold = 500   # 500 / 10000 = ~5% or 1500/10000 ~15% 
+
+
+# Read master Train population
+train_df = spark.table(train_table)
+
+
+# Keep all positive observations
+positives = (
+    train_df
+    .filter(F.col("target") == 1)
+)
+
+
+# Deterministically retain ~5% of negative observations
+negatives = (
+    train_df
+    .filter(F.col("target") == 0)
+    .withColumn(
+        "_sample_bucket",
+        F.pmod(
+            F.xxhash64(
+                F.col("policy_id"),
+                F.col("effective_dttm"),
+                F.lit(sampling_salt)
+            ),
+            F.lit(bucket_count)
+        )
+    )
+    .filter(F.col("_sample_bucket") < negative_threshold)
+    .drop("_sample_bucket")
+)
+
+
+# Combine all positives with sampled negatives
+sampled_train_df = (
+    positives
+    .unionByName(negatives)
+)
+
+
+# Persist as a separate modelling table
+(
+    sampled_train_df
+    .write
+    .format("delta")
+    .mode("overwrite")
+    .saveAsTable(sampled_train_table)
+)
+
+print(f"Created: {sampled_train_table}")
+
+# COMMAND ----------
+
+# DBTITLE 1,Check Reproducibility
+from pyspark.sql import functions as F
+
+schema = "bdp4_prod_ml_build.hi_customer_right_fit_cover_data"
+
+train_table = f"{schema}.rfc_training_20261020105807_train"
+sampled_train_table = f"{schema}.rfc_training_20261020105807_train_sampled"
+
+sampling_salt = 42
+bucket_count = 10000
+negative_threshold = 500
+
+train = spark.table(train_table)
+sampled = spark.table(sampled_train_table)
+
+
+# 1. Compare target counts
+print("MASTER TRAIN")
+train.groupBy("target").count().orderBy("target").show()
+
+print("SAMPLED TRAIN")
+sampled.groupBy("target").count().orderBy("target").show()
+
+
+# 2. Verify all positives were retained
+master_positives = train.filter(F.col("target") == 1).count()
+sampled_positives = sampled.filter(F.col("target") == 1).count()
+
+print("Master positives:", master_positives)
+print("Sampled positives:", sampled_positives)
+print("All positives retained:", master_positives == sampled_positives)
+
+
+# 3. Check realised negative sampling percentage
+master_negatives = train.filter(F.col("target") == 0).count()
+sampled_negatives = sampled.filter(F.col("target") == 0).count()
+
+negative_pct = sampled_negatives / master_negatives * 100
+
+print("Master negatives:", master_negatives)
+print("Sampled negatives:", sampled_negatives)
+print(f"Negative sampling rate: {negative_pct:.4f}%")
+
+
+# 4. Recreate deterministic expected sample
+expected = (
+    train
+    .withColumn(
+        "_sample_bucket",
+        F.pmod(
+            F.xxhash64(
+                F.col("policy_id"),
+                F.col("effective_dttm"),
+                F.lit(sampling_salt)
+            ),
+            F.lit(bucket_count)
+        )
+    )
+    .filter(
+        (F.col("target") == 1)
+        |
+        (
+            (F.col("target") == 0)
+            & (F.col("_sample_bucket") < negative_threshold)
+        )
+    )
+    .drop("_sample_bucket")
+)
+
+
+# Compare observation keys
+key_columns = [
+    "policy_id",
+    "effective_dttm",
+    "target"
+]
+
+differences = (
+    expected.select(*key_columns)
+    .exceptAll(sampled.select(*key_columns))
+    .unionByName(
+        sampled.select(*key_columns)
+        .exceptAll(expected.select(*key_columns))
+    )
+    .count()
+)
+
+print("Assignment differences:", differences)
+print("Deterministic sample reproduced:", differences == 0)
+
+# COMMAND ----------
+
+# if compute allows, recommendation is :
+
+# Train: 100% positives + deterministic X% negatives.
+# Validation: keep 100%.
+# Test: keep 100%.
+
+# COMMAND ----------
+
+# DBTITLE 1,Test/valid deterministic ssampling
+from pyspark.sql import functions as F
+
+schema = "bdp4_prod_ml_build.hi_customer_right_fit_cover_data"
+
+validation_table = (
+    f"{schema}.rfc_training_20261020105807_validation"
+)
+
+test_table = (
+    f"{schema}.rfc_training_20261020105807_test"
+)
+
+sampled_validation_table = (
+    f"{schema}.rfc_training_20261020105807_validation_sampled"
+)
+
+sampled_test_table = (
+    f"{schema}.rfc_training_20261020105807_test_sampled"
+)
+
+sampling_salt = 42
+bucket_count = 10000
+sample_threshold = 3000  # 30%
+
+
+def deterministic_sample(df):
+
+    return (
+        df
+        .withColumn(
+            "_sample_bucket",
+            F.pmod(
+                F.xxhash64(
+                    F.col("policy_id"),
+                    F.col("effective_dttm"),
+                    F.lit(sampling_salt)
+                ),
+                F.lit(bucket_count)
+            )
+        )
+        .filter(F.col("_sample_bucket") < sample_threshold)
+        .drop("_sample_bucket")
+    )
+
+
+# Validation: deterministic ~30% of ALL rows
+sampled_validation_df = deterministic_sample(
+    spark.table(validation_table)
+)
+
+(
+    sampled_validation_df
+    .write
+    .format("delta")
+    .mode("overwrite")
+    .saveAsTable(sampled_validation_table)
+)
+
+
+# Test: deterministic ~30% of ALL rows
+sampled_test_df = deterministic_sample(
+    spark.table(test_table)
+)
+
+(
+    sampled_test_df
+    .write
+    .format("delta")
+    .mode("overwrite")
+    .saveAsTable(sampled_test_table)
+)
+
+print(f"Created: {sampled_validation_table}")
+print(f"Created: {sampled_test_table}")
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
