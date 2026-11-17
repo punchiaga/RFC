@@ -1,0 +1,19 @@
+# RFC — Configurable sampling thresholds
+
+bucket_count = 10000
+
+negative_threshold = round(
+    RFC_DATA_CONFIG["negative_sample_pct"] * bucket_count / 100
+)
+
+validation_threshold = round(
+    RFC_DATA_CONFIG["validation_sample_pct"] * bucket_count / 100
+)
+
+test_threshold = round(
+    RFC_DATA_CONFIG["test_sample_pct"] * bucket_count / 100
+)
+
+print(f"Training negatives: {negative_threshold}/{bucket_count} buckets")
+print(f"Validation: {validation_threshold}/{bucket_count} buckets")
+print(f"Test: {test_threshold}/{bucket_count} buckets")
