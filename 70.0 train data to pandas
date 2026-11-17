@@ -123,3 +123,17 @@ print(
         X_train[rfc_all_numeric_columns].isna().all()
     ].tolist()
 )
+
+Numeric columns: 672
+Categorical columns: 21
+Total features: 693
+
+Pandas data types:
+float64    529
+int64      134
+object      21
+int32        9
+dtype: int64
+
+All-null numeric columns:
+['Hosp_group_OverseasHospitalOnsale', 'policy_future_org_from_date', 'policy_future_org_to_date', 'policy_national_pharmacy_product_id', 'policy_pharmacy_product_id', 'policy_pharmacy_product_rank']
