@@ -17,3 +17,18 @@ print(y_train.value_counts())
 
 print("\nData types:")
 print(X_train.dtypes.value_counts())
+
+Training features: (10113, 693)
+Training target: (10113,)
+
+Target distribution:
+0    6084
+1    4029
+Name: target, dtype: int64
+
+Data types:
+float64    363
+object     187
+int64      134
+int32        9
+dtype: int64
