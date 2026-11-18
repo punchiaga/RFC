@@ -71,3 +71,59 @@ assert len(saved_feature_columns) == len(set(saved_feature_columns))
 print("\nPASS: Saved model feature contract verified.")
 
 PASS: MLflow model reproduces original predictions.
+
+# Step 71: Reusable RFC probability correction
+
+import numpy as np
+
+def correct_rfc_probabilities(raw_probabilities, negative_sampling_rate=0.05):
+    """
+    Adjust XGBoost probabilities for negative-class downsampling.
+
+    Assumes:
+      - All positive training observations were retained.
+      - Negative observations were sampled independently at the
+        specified rate.
+    """
+    probabilities = np.asarray(raw_probabilities, dtype=np.float64)
+
+    if not 0 < negative_sampling_rate <= 1:
+        raise ValueError("negative_sampling_rate must be in (0, 1].")
+
+    if not np.all(np.isfinite(probabilities)):
+        raise ValueError("Probabilities must be finite.")
+
+    if np.any((probabilities < 0) | (probabilities > 1)):
+        raise ValueError("Probabilities must be between 0 and 1.")
+
+    return (
+        negative_sampling_rate * probabilities
+        / (
+            1.0 - probabilities
+            + negative_sampling_rate * probabilities
+        )
+    )
+
+
+# Verify against the previously calculated full-test scores
+recalculated = correct_rfc_probabilities(
+    rfc_full_test_scores["raw_score"].to_numpy(),
+    negative_sampling_rate=RFC_DATA_CONFIG["negative_sample_pct"] / 100.0
+)
+
+original = rfc_full_test_scores["corrected_score"].to_numpy()
+
+max_difference = np.max(np.abs(recalculated - original))
+
+print("RFC PROBABILITY CORRECTION — REPRODUCIBILITY")
+print("--------------------------------------------")
+print(f"Test observations: {len(recalculated):,}")
+print(f"Maximum difference: {max_difference:.12f}")
+print(
+    "Predictions match:",
+    np.allclose(recalculated, original, rtol=1e-6, atol=1e-8)
+)
+
+assert np.allclose(recalculated, original, rtol=1e-6, atol=1e-8)
+
+print("\nPASS: Probability correction is reproducible.")
