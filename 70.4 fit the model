@@ -78,3 +78,76 @@ PR baseline:   0.0301
 
 Predicted probability range:
 Min: 0.0472, Mean: 0.3649, Max: 0.9036
+
+# Step 30: Comprehensive RFC validation evaluation
+
+import pandas as pd
+
+from sklearn.metrics import (
+    roc_auc_score,
+    average_precision_score,
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    confusion_matrix
+)
+
+# Predict on validation only — no refitting
+rfc_valid_probabilities = (
+    rfc_xgb_prototype.predict_proba(X_valid)[:, 1]
+)
+
+# Diagnostic threshold only — not production-approved
+RFC_EVALUATION_THRESHOLD = 0.50
+
+rfc_valid_predictions = (
+    rfc_valid_probabilities >= RFC_EVALUATION_THRESHOLD
+).astype(int)
+
+rfc_validation_metrics = {
+    "ROC-AUC": roc_auc_score(
+        y_valid, rfc_valid_probabilities
+    ),
+    "PR-AUC (Average Precision)": average_precision_score(
+        y_valid, rfc_valid_probabilities
+    ),
+    "Accuracy": accuracy_score(
+        y_valid, rfc_valid_predictions
+    ),
+    "Precision": precision_score(
+        y_valid, rfc_valid_predictions, zero_division=0
+    ),
+    "Recall": recall_score(
+        y_valid, rfc_valid_predictions, zero_division=0
+    ),
+    "F1-score": f1_score(
+        y_valid, rfc_valid_predictions, zero_division=0
+    ),
+}
+
+print("RFC VALIDATION METRICS")
+print("----------------------")
+print(f"Observations: {len(y_valid):,}")
+print(f"Positive rate: {y_valid.mean():.2%}")
+print(f"Classification threshold: {RFC_EVALUATION_THRESHOLD}")
+
+for metric, value in rfc_validation_metrics.items():
+    print(f"{metric}: {value:.4f}")
+
+print("\nCONFUSION MATRIX")
+print("Rows = Actual, Columns = Predicted")
+
+print(
+    confusion_matrix(
+        y_valid,
+        rfc_valid_predictions,
+        labels=[0, 1]
+    )
+)
+
+print("\nPREDICTED PROBABILITY SUMMARY")
+print(
+    pd.Series(rfc_valid_probabilities)
+    .describe()
+)
