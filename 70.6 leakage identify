@@ -25,6 +25,42 @@ print(
 for c in rfc_leakage_review_columns:
     print(c)
 
+# Step 34: Prioritise leakage review using feature importance
+
+rfc_top20_features = (
+    rfc_feature_importance
+    .head(20)["feature"]
+    .tolist()
+)
+
+rfc_priority_leakage_features = []
+
+for feature in rfc_top20_features:
+    for candidate in rfc_leakage_review_columns:
+
+        # ColumnTransformer adds numeric__ or categorical__ prefixes
+        if feature == f"numeric__{candidate}" or (
+            feature.startswith(f"categorical__{candidate}_")
+        ):
+            rfc_priority_leakage_features.append({
+                "feature": feature,
+                "source_column": candidate
+            })
+            break
+
+rfc_priority_leakage_df = pd.DataFrame(
+    rfc_priority_leakage_features,
+    columns=["feature", "source_column"]
+)
+
+print(
+    "Top-20 features flagged for leakage review:",
+    len(rfc_priority_leakage_df)
+)
+
+display(rfc_priority_leakage_df)
+
+
 Features requiring point-in-time review: 132
 call_cover_review_cnt_12_month
 call_cover_review_cnt_1_month
