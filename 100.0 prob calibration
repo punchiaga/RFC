@@ -1,0 +1,42 @@
+# Step 56: Raw probability calibration diagnostics
+
+from sklearn.calibration import calibration_curve
+import matplotlib.pyplot as plt
+
+y_true = rfc_full_validation_scores["actual"].to_numpy()
+y_score = rfc_full_validation_scores["score"].to_numpy()
+
+fraction_of_positives, mean_predicted_value = calibration_curve(
+    y_true,
+    y_score,
+    n_bins=10,
+    strategy="quantile"
+)
+
+fig, ax = plt.subplots(figsize=(8, 6))
+
+ax.plot(
+    mean_predicted_value,
+    fraction_of_positives,
+    marker="o",
+    linewidth=2,
+    label="RFC XGBoost — Raw scores"
+)
+
+ax.plot(
+    [0, 1], [0, 1],
+    linestyle="--",
+    color="gray",
+    label="Perfect calibration"
+)
+
+ax.set_title("RFC Model — Raw Probability Calibration")
+ax.set_xlabel("Mean Predicted Probability")
+ax.set_ylabel("Observed Review Rate")
+ax.set_xlim(0, 1)
+ax.set_ylim(0, 1)
+ax.grid(alpha=0.3)
+ax.legend()
+
+plt.tight_layout()
+plt.show()
