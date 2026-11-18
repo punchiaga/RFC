@@ -1,0 +1,35 @@
+# Step 25: Build RFC preprocessing pipeline
+
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+
+rfc_numeric_pipeline_columns = (
+    rfc_binary_columns
+    + rfc_numeric_model_columns
+    + ["policy_org_discount_per_missing"]
+)
+
+rfc_preprocessor = ColumnTransformer(
+    transformers=[
+        (
+            "categorical",
+            OneHotEncoder(
+                handle_unknown="ignore",
+                sparse_output=True
+            ),
+            rfc_onehot_columns
+        ),
+        (
+            "numeric",
+            "passthrough",
+            rfc_numeric_pipeline_columns
+        )
+    ],
+    remainder="drop",
+    sparse_threshold=0.3
+)
+
+print("RFC preprocessing pipeline created.")
+print("Categorical columns:", len(rfc_onehot_columns))
+print("Numeric columns:", len(rfc_numeric_pipeline_columns))
+print("Total input features:", X_train.shape[1])
