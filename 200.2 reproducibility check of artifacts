@@ -30,3 +30,11 @@ assert predictions_match, (
 )
 
 print("\nPASS: MLflow model reproduces original predictions.")
+
+RFC MLFLOW MODEL — REPRODUCIBILITY CHECK
+----------------------------------------
+Observations tested: 10030
+Maximum prediction difference: 0.0
+Predictions match: True
+
+PASS: MLflow model reproduces original predictions.
