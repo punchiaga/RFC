@@ -65,3 +65,57 @@ for path in [
             print(f"Cgroup memory limit ({path}): {f.read().strip()}")
 Estimated pandas feature memory: 8.65 GB
 Estimated with 3x working-memory allowance: 25.96 GB
+
+
+# Step 39: Estimate float32 memory savings
+
+import numpy as np
+import pandas as pd
+
+numeric_cols = rfc_numeric_pipeline_columns
+
+current_numeric_memory = (
+    X_train[numeric_cols]
+    .memory_usage(deep=True)
+    .sum()
+)
+
+float32_numeric_memory = (
+    X_train[numeric_cols]
+    .astype(np.float32)
+    .memory_usage(deep=True)
+    .sum()
+)
+
+current_total_memory = X_train.memory_usage(deep=True).sum()
+
+estimated_optimised_memory = (
+    current_total_memory
+    - current_numeric_memory
+    + float32_numeric_memory
+)
+
+full_rows = rfc_train_df.count()
+
+print("RFC FLOAT32 MEMORY ASSESSMENT")
+print("-----------------------------")
+
+print(
+    f"Current prototype memory: "
+    f"{current_total_memory / 1024**2:.2f} MB"
+)
+
+print(
+    f"Float32 prototype estimate: "
+    f"{estimated_optimised_memory / 1024**2:.2f} MB"
+)
+
+print(
+    f"Estimated full dataset after conversion: "
+    f"{estimated_optimised_memory / len(X_train) * full_rows / 1024**3:.2f} GB"
+)
+
+print(
+    f"Estimated memory reduction: "
+    f"{100 * (1 - estimated_optimised_memory / current_total_memory):.1f}%"
+)
