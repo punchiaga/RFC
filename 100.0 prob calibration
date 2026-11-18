@@ -166,3 +166,46 @@ ax.legend()
 
 plt.tight_layout()
 plt.show()
+
+# Step 59: Corrected probability calibration by decile
+
+import numpy as np
+import pandas as pd
+
+rfc_calibration_df = pd.DataFrame({
+    "actual": y_true,
+    "corrected_probability": corrected_scores
+})
+
+# Decile 1 = highest predicted probability
+rfc_calibration_df["decile"] = (
+    pd.qcut(
+        rfc_calibration_df["corrected_probability"].rank(method="first"),
+        q=10,
+        labels=False
+    )
+)
+
+rfc_calibration_df["decile"] = (
+    10 - rfc_calibration_df["decile"]
+)
+
+rfc_calibration_results = (
+    rfc_calibration_df
+    .groupby("decile")
+    .agg(
+        observations=("actual", "size"),
+        reviewers=("actual", "sum"),
+        mean_predicted_probability=("corrected_probability", "mean"),
+        observed_review_rate=("actual", "mean")
+    )
+    .reset_index()
+    .sort_values("decile")
+)
+
+rfc_calibration_results["calibration_gap_pp"] = (
+    rfc_calibration_results["mean_predicted_probability"]
+    - rfc_calibration_results["observed_review_rate"]
+) * 100
+
+display(rfc_calibration_results)
