@@ -37,5 +37,31 @@ Prototype rows: 10,113
 Prototype memory: 0.061 GB
 
 Full sampled training rows: 1,434,220
+
+
+# Step 38: Inspect Databricks driver resources
+
+import os
+import psutil
+
+memory = psutil.virtual_memory()
+process = psutil.Process(os.getpid())
+
+print("RFC DRIVER RESOURCE CHECK")
+print("-------------------------")
+
+print(f"Total system memory:     {memory.total / (1024**3):.2f} GB")
+print(f"Available system memory: {memory.available / (1024**3):.2f} GB")
+print(f"Current Python RSS:      {process.memory_info().rss / (1024**3):.2f} GB")
+print(f"Logical CPU count:       {psutil.cpu_count(logical=True)}")
+
+# Container/cgroup memory limits, where exposed
+for path in [
+    "/sys/fs/cgroup/memory.max",
+    "/sys/fs/cgroup/memory/memory.limit_in_bytes"
+]:
+    if os.path.exists(path):
+        with open(path) as f:
+            print(f"Cgroup memory limit ({path}): {f.read().strip()}")
 Estimated pandas feature memory: 8.65 GB
 Estimated with 3x working-memory allowance: 25.96 GB
