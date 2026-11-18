@@ -12,3 +12,45 @@ print("Active model features:", len(RFC_ACTIVE_FEATURE_COLUMNS))
 
 print("\nTarget distribution:")
 rfc_full_train_prepared_df.groupBy("target").count().show()
+
+# Step 46: Collect full sampled training data into pandas
+
+import gc
+import numpy as np
+
+# Collect only the approved model features and target
+rfc_full_train_pd = rfc_full_train_prepared_df.toPandas()
+
+print("Collected rows:", f"{len(rfc_full_train_pd):,}")
+
+# Convert numeric features to float32
+rfc_full_train_pd[rfc_numeric_pipeline_columns] = (
+    rfc_full_train_pd[rfc_numeric_pipeline_columns]
+    .astype(np.float32)
+)
+
+# Separate features and target
+X_train_full = rfc_full_train_pd[RFC_ACTIVE_FEATURE_COLUMNS].copy()
+y_train_full = rfc_full_train_pd["target"].astype(np.int8).copy()
+
+# Release the intermediate pandas DataFrame
+del rfc_full_train_pd
+gc.collect()
+
+print("X_train_full shape:", X_train_full.shape)
+print("y_train_full shape:", y_train_full.shape)
+
+print(
+    "Positive observations:",
+    f"{int(y_train_full.sum()):,}"
+)
+
+print(
+    "Negative observations:",
+    f"{int((y_train_full == 0).sum()):,}"
+)
+
+print(
+    "Feature memory:",
+    f"{X_train_full.memory_usage(deep=True).sum() / 1024**3:.2f} GB"
+)
