@@ -179,3 +179,43 @@ min          0.047250
 75%          0.457486
 max          0.903611
 dtype: float64
+
+# Step 49: Evaluate full RFC model on validation prototype
+
+from sklearn.metrics import (
+    roc_auc_score,
+    average_precision_score,
+    log_loss
+)
+
+# Predict using the full trained pipeline
+rfc_valid_probabilities_full = (
+    rfc_xgb_full.predict_proba(X_valid)[:, 1]
+)
+
+# Ranking and probability metrics
+rfc_full_valid_roc_auc = roc_auc_score(
+    y_valid,
+    rfc_valid_probabilities_full
+)
+
+rfc_full_valid_pr_auc = average_precision_score(
+    y_valid,
+    rfc_valid_probabilities_full
+)
+
+rfc_full_valid_log_loss = log_loss(
+    y_valid,
+    rfc_valid_probabilities_full
+)
+
+print("RFC FULL MODEL — VALIDATION PROTOTYPE")
+print("-------------------------------------")
+print(f"ROC-AUC: {rfc_full_valid_roc_auc:.4f}")
+print(f"PR-AUC:  {rfc_full_valid_pr_auc:.4f}")
+print(f"Log loss: {rfc_full_valid_log_loss:.4f}")
+print(f"Actual positive rate: {y_valid.mean():.4%}")
+print(
+    f"Mean predicted probability: "
+    f"{rfc_valid_probabilities_full.mean():.4%}"
+)
