@@ -1,0 +1,32 @@
+# Step 43: Identify potentially problematic numeric features
+
+import numpy as np
+import pandas as pd
+
+rfc_large_numeric_features = []
+
+for col in rfc_numeric_pipeline_columns:
+    values = pd.to_numeric(X_train[col], errors="coerce")
+    valid = values.dropna()
+
+    if valid.empty:
+        continue
+
+    max_abs = valid.abs().max()
+
+    if max_abs > 1_000_000:
+        rfc_large_numeric_features.append({
+            "feature": col,
+            "max_abs_value": max_abs,
+            "unique_values": valid.nunique(),
+            "sample_values": valid.head(3).tolist()
+        })
+
+rfc_large_numeric_results = pd.DataFrame(
+    rfc_large_numeric_features
+)
+
+print("Features with absolute values above 1 million:",
+      len(rfc_large_numeric_results))
+
+display(rfc_large_numeric_results)
