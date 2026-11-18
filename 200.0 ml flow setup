@@ -63,3 +63,71 @@ estimator.html
 training_confusion_matrix.png
 training_precision_recall_curve.png
 training_roc_curve.png
+
+
+# Step 66: Log RFC Baseline v1 evaluation metrics to MLflow
+
+import mlflow
+
+rfc_run_id = "af83c7a63c4e4558a01cfe1025bba262"
+
+rfc_metrics = {
+    # Full validation metrics
+    "validation_roc_auc": float(roc_auc),
+    "validation_pr_auc": float(pr_auc),
+    "validation_precision_raw_0_5": float(
+        precision_score(y_true, y_score >= 0.5, zero_division=0)
+    ),
+    "validation_recall_raw_0_5": float(
+        recall_score(y_true, y_score >= 0.5, zero_division=0)
+    ),
+    "validation_f1_raw_0_5": float(
+        f1_score(y_true, y_score >= 0.5, zero_division=0)
+    ),
+    "validation_brier_corrected": float(
+        brier_score_loss(y_true, corrected_scores)
+    ),
+    "validation_logloss_corrected": float(
+        log_loss(y_true, corrected_scores)
+    ),
+
+    # Independent test metrics
+    "test_roc_auc": float(test_roc_auc),
+    "test_pr_auc": float(test_pr_auc),
+    "test_precision_raw_0_5": float(test_precision),
+    "test_recall_raw_0_5": float(test_recall),
+    "test_f1_raw_0_5": float(test_f1),
+    "test_brier_corrected": float(test_brier_corrected),
+    "test_logloss_corrected": float(test_logloss_corrected)
+}
+
+# Log targeting lift for both datasets
+for pct in [1, 5, 10, 20]:
+    rfc_metrics[f"validation_lift_top_{pct}pct"] = float(
+        rfc_full_topk_results.loc[
+            rfc_full_topk_results["Top %"] == pct, "Lift"
+        ].iloc[0]
+    )
+
+    rfc_metrics[f"test_lift_top_{pct}pct"] = float(
+        rfc_test_topk_results.loc[
+            rfc_test_topk_results["Top %"] == pct, "Lift"
+        ].iloc[0]
+    )
+
+# Log to the verified run
+with mlflow.start_run(run_id=rfc_run_id):
+    mlflow.log_metrics(rfc_metrics)
+    mlflow.set_tags({
+        "model_name": "RFC_XGBoost_Baseline_v1",
+        "model_stage": "baseline_evaluation",
+        "evaluation_scope": "full_validation_and_test",
+        "negative_sampling_rate": "0.05",
+        "probability_correction": "prior_odds_correction",
+        "classification_threshold": "raw_score_0.5"
+    })
+
+print("RFC BASELINE V1 — MLFLOW METRICS LOGGED")
+print("---------------------------------------")
+print("Run ID:", rfc_run_id)
+print("Metrics logged:", len(rfc_metrics))
