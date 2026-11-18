@@ -1,0 +1,113 @@
+# Step 62: RFC full test evaluation
+
+import numpy as np
+import pandas as pd
+
+from sklearn.metrics import (
+    roc_auc_score,
+    average_precision_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    confusion_matrix,
+    brier_score_loss,
+    log_loss
+)
+
+# Test labels and scores
+y_test_full = rfc_full_test_scores["actual"].to_numpy()
+raw_test = rfc_full_test_scores["raw_score"].to_numpy()
+corrected_test = rfc_full_test_scores["corrected_score"].to_numpy()
+
+# Ranking metrics
+test_roc_auc = roc_auc_score(y_test_full, raw_test)
+test_pr_auc = average_precision_score(y_test_full, raw_test)
+
+# Classification metrics — raw-score threshold 0.5
+test_threshold = 0.5
+test_predictions = (raw_test >= test_threshold).astype(int)
+
+test_precision = precision_score(
+    y_test_full, test_predictions, zero_division=0
+)
+test_recall = recall_score(
+    y_test_full, test_predictions, zero_division=0
+)
+test_f1 = f1_score(
+    y_test_full, test_predictions, zero_division=0
+)
+
+# Probability quality
+test_brier_raw = brier_score_loss(y_test_full, raw_test)
+test_brier_corrected = brier_score_loss(
+    y_test_full, corrected_test
+)
+
+test_logloss_raw = log_loss(y_test_full, raw_test)
+test_logloss_corrected = log_loss(
+    y_test_full, corrected_test
+)
+
+print("RFC FULL TEST — MODEL PERFORMANCE")
+print("---------------------------------")
+print(f"Observations: {len(y_test_full):,}")
+print(f"Actual reviewers: {int(y_test_full.sum()):,}")
+print(f"Actual review rate: {y_test_full.mean():.4%}")
+
+print("\nRANKING METRICS")
+print(f"ROC-AUC: {test_roc_auc:.4f}")
+print(f"PR-AUC:  {test_pr_auc:.4f}")
+
+print(f"\nCLASSIFICATION METRICS (raw threshold = {test_threshold})")
+print(f"Precision: {test_precision:.4f}")
+print(f"Recall:    {test_recall:.4f}")
+print(f"F1-score:  {test_f1:.4f}")
+
+print("\nCONFUSION MATRIX")
+print(confusion_matrix(y_test_full, test_predictions))
+
+print("\nPROBABILITY QUALITY")
+print(f"Mean raw score:       {raw_test.mean():.4%}")
+print(f"Mean corrected score: {corrected_test.mean():.4%}")
+print(f"Raw Brier score:      {test_brier_raw:.6f}")
+print(f"Corrected Brier:      {test_brier_corrected:.6f}")
+print(f"Raw log loss:         {test_logloss_raw:.6f}")
+print(f"Corrected log loss:   {test_logloss_corrected:.6f}")
+
+# Top-K targeting metrics
+ranked_test = rfc_full_test_scores.sort_values(
+    "raw_score", ascending=False
+).reset_index(drop=True)
+
+total_reviewers = int(ranked_test["actual"].sum())
+baseline_rate = ranked_test["actual"].mean()
+
+test_topk_results = []
+
+for pct in [1, 5, 10, 20]:
+    k = int(np.ceil(len(ranked_test) * pct / 100))
+    selected = ranked_test.iloc[:k]
+
+    tp = int(selected["actual"].sum())
+    precision_k = tp / k
+    recall_k = tp / total_reviewers
+
+    f1_k = (
+        2 * precision_k * recall_k / (precision_k + recall_k)
+        if precision_k + recall_k > 0 else 0
+    )
+
+    test_topk_results.append({
+        "Top %": pct,
+        "Observations": k,
+        "Reviewers": tp,
+        "Precision": precision_k,
+        "Recall": recall_k,
+        "F1-score": f1_k,
+        "Lift": precision_k / baseline_rate
+    })
+
+rfc_test_topk_results = pd.DataFrame(test_topk_results)
+
+print("\nTOP-K TEST PERFORMANCE")
+display(rfc_test_topk_results)
