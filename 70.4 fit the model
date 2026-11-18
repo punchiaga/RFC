@@ -151,3 +151,31 @@ print(
     pd.Series(rfc_valid_probabilities)
     .describe()
 )
+
+RFC VALIDATION METRICS
+----------------------
+Observations: 10,030
+Positive rate: 3.01%
+Classification threshold: 0.5
+ROC-AUC: 0.6995
+PR-AUC (Average Precision): 0.0770
+Accuracy: 0.8217
+Precision: 0.0740
+Recall: 0.4272
+F1-score: 0.1261
+
+CONFUSION MATRIX
+Rows = Actual, Columns = Predicted
+[[8113 1615]
+ [ 173  129]]
+
+PREDICTED PROBABILITY SUMMARY
+count    10030.000000
+mean         0.364933
+std          0.142074
+min          0.047250
+25%          0.266380
+50%          0.356593
+75%          0.457486
+max          0.903611
+dtype: float64
