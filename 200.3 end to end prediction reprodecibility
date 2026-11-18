@@ -123,3 +123,58 @@ Raw predictions match: True
 Mean corrected probability: 3.0246%
 
 PASS: Saved model and probability correction verified.
+
+# Step 73: Validate RFC inference feature preparation
+
+from pyspark.sql import functions as F
+from pyspark.sql.types import NumericType, StringType
+
+# Use a small deterministic subset of the existing test data
+rfc_feature_check_df = prepare_rfc_features(
+    rfc_test_batched_df.filter(F.col("_test_batch") == 0)
+).select(*RFC_ACTIVE_FEATURE_COLUMNS).limit(100)
+
+schema = {
+    field.name: field.dataType
+    for field in rfc_feature_check_df.schema.fields
+}
+
+# Validate required columns
+missing_columns = [
+    c for c in RFC_ACTIVE_FEATURE_COLUMNS
+    if c not in schema
+]
+
+# Validate numeric feature types
+invalid_numeric = [
+    c for c in rfc_numeric_pipeline_columns
+    if c in schema and not isinstance(schema[c], NumericType)
+]
+
+# Validate categorical feature types
+invalid_categorical = [
+    c for c in rfc_onehot_columns
+    if c in schema and not isinstance(schema[c], StringType)
+]
+
+print("RFC FEATURE PREPARATION — CONTRACT CHECK")
+print("----------------------------------------")
+print("Expected features:", len(RFC_ACTIVE_FEATURE_COLUMNS))
+print("Missing features:", len(missing_columns))
+print("Invalid numeric types:", len(invalid_numeric))
+print("Invalid categorical types:", len(invalid_categorical))
+
+if missing_columns:
+    print("Missing:", missing_columns)
+
+if invalid_numeric:
+    print("Invalid numeric:", invalid_numeric)
+
+if invalid_categorical:
+    print("Invalid categorical:", invalid_categorical)
+
+assert not missing_columns
+assert not invalid_numeric
+assert not invalid_categorical
+
+print("\nPASS: RFC feature preparation schema verified.")
