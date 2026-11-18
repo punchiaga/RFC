@@ -198,3 +198,11 @@ for dataset_name, dataset_df in rfc_dataset_tables.items():
     print(dataset_df._jdf.queryExecution().analyzed().toString()[:1000])
 
     print("Columns:", len(dataset_df.columns))
+
+[JVM_ATTRIBUTE_NOT_SUPPORTED] Directly accessing the underlying Spark driver JVM using the attribute '_jdf' is not supported on shared clusters. If you require direct access to these fields, consider using a single-user cluster. For more details on compatibility and limitations, check: https://learn.microsoft.com/azure/databricks/compute/access-mode-limitations.html#shared-access-mode-limitations-on-unity-catalog
+File <command-8219229650323814>, line 17
+     14 print(f"\nDataset: {dataset_name}")
+     16 print("Spark source plan:")
+---> 17 print(dataset_df._jdf.queryExecution().analyzed().toString()[:1000])
+     19 print("Columns:", len(dataset_df.columns))
+
