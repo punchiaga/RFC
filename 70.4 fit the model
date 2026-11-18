@@ -1,0 +1,32 @@
+# Step 29: Fit RFC XGBoost prototype
+
+import time
+
+start_time = time.time()
+
+# Fits preprocessing and XGBoost on TRAINING data only
+rfc_xgb_prototype.fit(X_train, y_train)
+
+training_seconds = time.time() - start_time
+
+print("RFC XGBoost prototype training completed.")
+print(f"Training time: {training_seconds:.2f} seconds")
+
+print("\nModel details:")
+print(
+    "Boosted trees:",
+    rfc_xgb_prototype.named_steps["classifier"].n_estimators
+)
+
+print(
+    "Transformed feature count:",
+    len(
+        rfc_xgb_prototype.named_steps[
+            "preprocessor"
+        ].get_feature_names_out()
+    )
+)
+
+print("\nTraining observations:", len(X_train))
+print("Validation observations:", len(X_valid))
+print("Test observations:", len(X_test))
