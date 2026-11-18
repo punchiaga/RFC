@@ -1,0 +1,38 @@
+# Step 26: Prepare RFC validation and test prototypes
+
+RFC_EVALUATION_PROTOTYPE_SIZE = 10_000
+RFC_EVALUATION_SEED = 42
+
+rfc_validation_df = spark.table(RFC_VALIDATION_SAMPLED_TABLE)
+rfc_test_df = spark.table(RFC_TEST_SAMPLED_TABLE)
+
+# Small prototypes for technical pipeline validation only
+rfc_validation_prototype_df = rfc_validation_df.sample(
+    withReplacement=False,
+    fraction=min(
+        1.0,
+        RFC_EVALUATION_PROTOTYPE_SIZE / rfc_validation_df.count()
+    ),
+    seed=RFC_EVALUATION_SEED
+)
+
+rfc_test_prototype_df = rfc_test_df.sample(
+    withReplacement=False,
+    fraction=min(
+        1.0,
+        RFC_EVALUATION_PROTOTYPE_SIZE / rfc_test_df.count()
+    ),
+    seed=RFC_EVALUATION_SEED
+)
+
+# Apply the SAME feature transformation function
+rfc_validation_prototype_prepared_df = prepare_rfc_features(
+    rfc_validation_prototype_df
+)
+
+rfc_test_prototype_prepared_df = prepare_rfc_features(
+    rfc_test_prototype_df
+)
+
+print("Validation prototype:", rfc_validation_prototype_prepared_df.count())
+print("Test prototype:", rfc_test_prototype_prepared_df.count())
