@@ -40,3 +40,51 @@ ax.legend()
 
 plt.tight_layout()
 plt.show()
+
+# Step 57: Prior-probability correction for negative downsampling
+
+import numpy as np
+from sklearn.metrics import brier_score_loss, log_loss
+
+y_true = rfc_full_validation_scores["actual"].to_numpy()
+raw_scores = rfc_full_validation_scores["score"].to_numpy()
+
+# Training retained all positives and 5% of negatives
+negative_sampling_rate = RFC_DATA_CONFIG["negative_sample_pct"] / 100.0
+
+# Adjust sampled-training odds to population odds
+corrected_scores = (
+    negative_sampling_rate * raw_scores
+    / (
+        (1.0 - raw_scores)
+        + negative_sampling_rate * raw_scores
+    )
+)
+
+rfc_full_validation_scores["corrected_score"] = corrected_scores
+
+print("RFC PROBABILITY CORRECTION")
+print("--------------------------")
+print(f"Negative sampling rate: {negative_sampling_rate:.2%}")
+print(f"Actual review rate:     {y_true.mean():.4%}")
+print(f"Mean raw score:         {raw_scores.mean():.4%}")
+print(f"Mean corrected score:   {corrected_scores.mean():.4%}")
+
+print("\nPROBABILITY QUALITY")
+print("-------------------")
+print(
+    f"Raw Brier score:       "
+    f"{brier_score_loss(y_true, raw_scores):.6f}"
+)
+print(
+    f"Corrected Brier score: "
+    f"{brier_score_loss(y_true, corrected_scores):.6f}"
+)
+print(
+    f"Raw log loss:          "
+    f"{log_loss(y_true, raw_scores):.6f}"
+)
+print(
+    f"Corrected log loss:    "
+    f"{log_loss(y_true, corrected_scores):.6f}"
+)
