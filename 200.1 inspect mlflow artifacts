@@ -37,3 +37,14 @@ try:
 
 except Exception as e:
     print("Logged-model lookup unavailable:", str(e)[:300])
+
+RFC BASELINE V1 — MLFLOW ARTIFACT INSPECTION
+-------------------------------------------
+estimator.html
+training_confusion_matrix.png
+training_precision_recall_curve.png
+training_roc_curve.png
+
+MLFLOW LOGGED MODELS
+-------------------
+Logged-model lookup unavailable: INVALID_PARAMETER_VALUE: Could not parse search logged models filter: `source_run_id = 'af83c7a63c4e4558a01cfe1025bba262'`, Invalid attribute column 'source_run_id' for filter_string. Attribute table columns may not need a prefix, but a valid attribute column must be presented. All valid attribute c
