@@ -37,3 +37,34 @@ print("RFC preprocessing pipeline created.")
 print("Categorical columns:", len(rfc_onehot_columns))
 print("Numeric columns:", len(rfc_numeric_pipeline_columns))
 print("Total input features:", X_train.shape[1])
+
+Validation pipeline
+# Step 26: Validate RFC preprocessing pipeline
+
+from scipy import sparse
+import numpy as np
+
+X_train_transformed = rfc_preprocessor.fit_transform(X_train)
+
+print("Original shape:", X_train.shape)
+print("Transformed shape:", X_train_transformed.shape)
+
+print(
+    "Output format:",
+    "Sparse" if sparse.issparse(X_train_transformed) else "Dense"
+)
+
+print(
+    "Transformed feature count:",
+    len(rfc_preprocessor.get_feature_names_out())
+)
+
+# Check for infinite values without densifying a sparse matrix
+values = (
+    X_train_transformed.data
+    if sparse.issparse(X_train_transformed)
+    else X_train_transformed
+)
+
+print("Infinite values:", np.isinf(values).sum())
+print("Missing values:", np.isnan(values).sum())
