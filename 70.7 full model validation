@@ -1,0 +1,33 @@
+# Step 51: Prepare full validation dataset for batch scoring
+
+from pyspark.sql import functions as F
+
+RFC_VALIDATION_BATCHES = 20
+
+rfc_validation_batched_df = (
+    rfc_validation_df
+    .withColumn(
+        "_validation_batch",
+        F.pmod(
+            F.xxhash64(
+                F.col("policy_id"),
+                F.col("effective_dttm"),
+                F.lit(42)
+            ),
+            F.lit(RFC_VALIDATION_BATCHES)
+        )
+    )
+)
+
+print("Validation batch distribution:")
+
+rfc_validation_batched_df.groupBy(
+    "_validation_batch"
+).count().orderBy(
+    "_validation_batch"
+).show(20)
+
+print(
+    "Total validation rows:",
+    rfc_validation_batched_df.count()
+)
