@@ -114,3 +114,12 @@ print(
 assert raw_match, "MLflow predictions do not match!"
 
 print("\nPASS: Saved model and probability correction verified.")
+
+RFC MLFLOW INFERENCE — REPRODUCIBILITY
+--------------------------------------
+Observations: 10030
+Maximum prediction difference: 0.0
+Raw predictions match: True
+Mean corrected probability: 3.0246%
+
+PASS: Saved model and probability correction verified.
