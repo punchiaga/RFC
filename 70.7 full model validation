@@ -446,3 +446,49 @@ Top 10% observations: 199,836
 Reviewers in top 10%: 17,610
 Top-decile review rate: 8.8122%
 Top-decile lift: 2.80x
+
+
+# Step 55: Record RFC full-model validation baseline
+
+rfc_validation_baseline = {
+    "model": "RFC_XGB_Full_Baseline",
+    "validation_rows": len(y_true),
+    "positive_rate": float(y_true.mean()),
+    "roc_auc": float(roc_auc),
+    "pr_auc": float(pr_auc),
+    "precision_at_0_5": float(
+        precision_score(y_true, y_score >= 0.5, zero_division=0)
+    ),
+    "recall_at_0_5": float(
+        recall_score(y_true, y_score >= 0.5, zero_division=0)
+    ),
+    "f1_at_0_5": float(
+        f1_score(y_true, y_score >= 0.5, zero_division=0)
+    ),
+    "lift_at_1pct": float(
+        rfc_full_topk_results.loc[
+            rfc_full_topk_results["Top %"] == 1, "Lift"
+        ].iloc[0]
+    ),
+    "lift_at_5pct": float(
+        rfc_full_topk_results.loc[
+            rfc_full_topk_results["Top %"] == 5, "Lift"
+        ].iloc[0]
+    ),
+    "lift_at_10pct": float(
+        rfc_full_topk_results.loc[
+            rfc_full_topk_results["Top %"] == 10, "Lift"
+        ].iloc[0]
+    ),
+    "lift_at_20pct": float(
+        rfc_full_topk_results.loc[
+            rfc_full_topk_results["Top %"] == 20, "Lift"
+        ].iloc[0]
+    )
+}
+
+rfc_validation_baseline_df = pd.DataFrame(
+    [rfc_validation_baseline]
+)
+
+display(rfc_validation_baseline_df)
