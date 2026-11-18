@@ -1,0 +1,29 @@
+# Step 28: Build RFC XGBoost prototype pipeline
+
+from sklearn.pipeline import Pipeline
+from xgboost import XGBClassifier
+
+rfc_xgb_prototype = Pipeline(
+    steps=[
+        ("preprocessor", rfc_preprocessor),
+        (
+            "classifier",
+            XGBClassifier(
+                objective="binary:logistic",
+                n_estimators=200,
+                max_depth=4,
+                learning_rate=0.05,
+                subsample=0.8,
+                colsample_bytree=0.8,
+                tree_method="hist",
+                eval_metric="aucpr",
+                random_state=42,
+                n_jobs=4
+            )
+        )
+    ]
+)
+
+print("RFC XGBoost prototype pipeline created.")
+print("Pipeline steps:", list(rfc_xgb_prototype.named_steps.keys()))
+print("Model:", type(rfc_xgb_prototype.named_steps["classifier"]).__name__)
