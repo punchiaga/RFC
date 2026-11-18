@@ -45,3 +45,23 @@ print("Mean corrected probability:",
 assert raw_match, "End-to-end inference predictions do not match!"
 
 print("\nPASS: RFC inference pipeline is reproducible.")
+
+ValueError: operands could not be broadcast together with shapes (10106,) (10030,) 
+File <command-8219229650323817>, line 31
+     25 rfc_inference_corrected_scores = correct_rfc_probabilities(
+     26     rfc_inference_raw_scores,
+     27     negative_sampling_rate=RFC_DATA_CONFIG["negative_sample_pct"] / 100.0
+     28 )
+     30 # 6. Compare with our original validation predictions
+---> 31 raw_match = np.allclose(
+     32     rfc_inference_raw_scores,
+     33     rfc_valid_probabilities_full,
+     34     rtol=1e-6,
+     35     atol=1e-8
+     36 )
+     38 print("RFC END-TO-END INFERENCE VERIFICATION")
+     39 print("-------------------------------------")
+File /databricks/python/lib/python3.11/site-packages/numpy/core/numeric.py:2356, in isclose.<locals>.within_tol(x, y, atol, rtol)
+   2354 def within_tol(x, y, atol, rtol):
+   2355     with errstate(invalid='ignore'):
+-> 2356         return less_equal(abs(x-y), atol + rtol * abs(y))
