@@ -1,0 +1,16 @@
+# Step 64: Identify the RFC full-model MLflow run
+
+import mlflow
+
+rfc_full_model_run = mlflow.last_active_run()
+
+if rfc_full_model_run is None:
+    print("No active MLflow run found in this session.")
+else:
+    print("RFC FULL MODEL — MLFLOW RUN")
+    print("---------------------------")
+    print("Run ID:", rfc_full_model_run.info.run_id)
+    print("Run name:", rfc_full_model_run.info.run_name)
+    print("Experiment ID:", rfc_full_model_run.info.experiment_id)
+    print("Status:", rfc_full_model_run.info.status)
+    print("Artifact URI:", rfc_full_model_run.info.artifact_uri)
