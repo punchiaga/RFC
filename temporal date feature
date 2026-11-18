@@ -44,3 +44,51 @@ rfc_model_feature_columns = [
 print("Date engineering pending:", RFC_DATE_ENGINEERING_PENDING)
 print("Temporarily excluded date columns:", len(rfc_temporal_columns))
 print("Model candidate features:", len(rfc_model_feature_columns))
+
+# Step 42: Exclude raw YYYYMMDD organisation dates
+
+RFC_RAW_DATE_COLUMNS = [
+    "policy_org_from_date",
+    "policy_org_to_date"
+]
+
+# Remove from the numeric feature list
+rfc_numeric_pipeline_columns = [
+    col for col in rfc_numeric_pipeline_columns
+    if col not in RFC_RAW_DATE_COLUMNS
+]
+
+# Remove from the active feature list
+RFC_ACTIVE_FEATURE_COLUMNS = [
+    col for col in RFC_ACTIVE_FEATURE_COLUMNS
+    if col not in RFC_RAW_DATE_COLUMNS
+]
+
+# Rebuild the preprocessor using the updated feature lists
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+
+rfc_preprocessor = ColumnTransformer(
+    transformers=[
+        (
+            "categorical",
+            OneHotEncoder(
+                handle_unknown="ignore",
+                sparse_output=True
+            ),
+            rfc_onehot_columns
+        ),
+        (
+            "numeric",
+            "passthrough",
+            rfc_numeric_pipeline_columns
+        )
+    ],
+    remainder="drop",
+    sparse_threshold=0.3
+)
+
+print("Excluded raw date features:", RFC_RAW_DATE_COLUMNS)
+print("Active input features:", len(RFC_ACTIVE_FEATURE_COLUMNS))
+print("Numeric features:", len(rfc_numeric_pipeline_columns))
+print("Categorical features:", len(rfc_onehot_columns))
