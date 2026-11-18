@@ -88,3 +88,17 @@ print(
     f"Corrected log loss:    "
     f"{log_loss(y_true, corrected_scores):.6f}"
 )
+
+RFC PROBABILITY CORRECTION
+--------------------------
+Negative sampling rate: 5.00%
+Actual review rate:     3.1480%
+Mean raw score:         35.6643%
+Mean corrected score:   3.0483%
+
+PROBABILITY QUALITY
+-------------------
+Raw Brier score:       0.147643
+Corrected Brier score: 0.029859
+Raw log loss:          0.470993
+Corrected log loss:    0.131424
