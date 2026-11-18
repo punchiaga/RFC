@@ -77,3 +77,46 @@ rfc_xgb_full = Pipeline([
 print("Full RFC XGBoost pipeline configured.")
 print("Training observations:", len(X_train_full))
 print("Model features:", len(RFC_ACTIVE_FEATURE_COLUMNS))
+
+
+# Step 46A: Test one bounded training-data batch
+
+from pyspark.sql import functions as F
+
+RFC_COLLECTION_BATCHES = 10
+
+rfc_train_batched_df = (
+    rfc_train_df
+    .withColumn(
+        "_collection_batch",
+        F.pmod(
+            F.xxhash64(
+                F.col("policy_id"),
+                F.col("effective_dttm"),
+                F.lit(42)
+            ),
+            F.lit(RFC_COLLECTION_BATCHES)
+        )
+    )
+)
+
+rfc_batch_0_df = (
+    prepare_rfc_features(
+        rfc_train_batched_df.filter(
+            F.col("_collection_batch") == 0
+        )
+    )
+    .select(*RFC_ACTIVE_FEATURE_COLUMNS, "target")
+)
+
+rfc_batch_0_pd = rfc_batch_0_df.toPandas()
+
+print("Batch 0 rows:", len(rfc_batch_0_pd))
+print(
+    "Batch 0 memory:",
+    round(
+        rfc_batch_0_pd.memory_usage(deep=True).sum() / 1024**3,
+        2
+    ),
+    "GB"
+)
