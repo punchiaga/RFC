@@ -112,3 +112,41 @@ available_columns = [
 print("Available columns:", models.columns.tolist())
 
 display(models[available_columns])
+
+# Step 68: Load and inspect the existing RFC MLflow model
+
+import mlflow
+import mlflow.sklearn
+
+rfc_run_id = "af83c7a63c4e4558a01cfe1025bba262"
+
+# Reuse the models DataFrame from Step 67B
+matching_models = models.loc[
+    models["source_run_id"] == rfc_run_id
+]
+
+assert len(matching_models) == 1, (
+    f"Expected 1 RFC model, found {len(matching_models)}"
+)
+
+rfc_logged_model_id = matching_models.iloc[0]["model_id"]
+rfc_logged_model_uri = f"models:/{rfc_logged_model_id}"
+
+print("RFC SAVED MODEL VERIFICATION")
+print("----------------------------")
+print("Model ID:", rfc_logged_model_id)
+print("Model URI:", rfc_logged_model_uri)
+
+# Load the already-trained pipeline
+rfc_loaded_model = mlflow.sklearn.load_model(
+    rfc_logged_model_uri
+)
+
+print("\nLoaded model type:", type(rfc_loaded_model))
+
+print("\nPipeline steps:")
+if hasattr(rfc_loaded_model, "named_steps"):
+    for name, step in rfc_loaded_model.named_steps.items():
+        print(f"{name}: {type(step).__name__}")
+else:
+    print("Loaded object is not an sklearn Pipeline.")
