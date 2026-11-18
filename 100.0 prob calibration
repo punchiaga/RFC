@@ -102,3 +102,67 @@ Raw Brier score:       0.147643
 Corrected Brier score: 0.029859
 Raw log loss:          0.470993
 Corrected log loss:    0.131424
+
+# Step 58: Compare raw vs corrected calibration
+
+import matplotlib.pyplot as plt
+from sklearn.calibration import calibration_curve
+
+raw_fraction, raw_mean = calibration_curve(
+    y_true,
+    raw_scores,
+    n_bins=10,
+    strategy="quantile"
+)
+
+corrected_fraction, corrected_mean = calibration_curve(
+    y_true,
+    corrected_scores,
+    n_bins=10,
+    strategy="quantile"
+)
+
+fig, ax = plt.subplots(figsize=(9, 7))
+
+ax.plot(
+    raw_mean,
+    raw_fraction,
+    marker="o",
+    linewidth=2,
+    label="Raw XGBoost"
+)
+
+ax.plot(
+    corrected_mean,
+    corrected_fraction,
+    marker="o",
+    linewidth=2,
+    label="Prior-corrected XGBoost"
+)
+
+ax.plot(
+    [0, 1],
+    [0, 1],
+    linestyle="--",
+    color="gray",
+    label="Perfect calibration"
+)
+
+# Zoom into the range relevant to observed review probabilities
+ax.set_xlim(0, 0.15)
+ax.set_ylim(0, 0.15)
+
+ax.set_title(
+    "RFC Model — Probability Calibration Comparison",
+    fontsize=14,
+    fontweight="bold"
+)
+
+ax.set_xlabel("Mean Predicted Probability")
+ax.set_ylabel("Observed 90-Day Cover Review Rate")
+
+ax.grid(alpha=0.3)
+ax.legend()
+
+plt.tight_layout()
+plt.show()
