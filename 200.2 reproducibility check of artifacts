@@ -1,0 +1,32 @@
+# Step 69: Verify saved RFC model prediction reproducibility
+
+import numpy as np
+
+# Use the existing validation prototype
+original_scores = rfc_xgb_full.predict_proba(X_valid)[:, 1]
+
+loaded_scores = rfc_loaded_model.predict_proba(X_valid)[:, 1]
+
+# Compare predictions
+max_difference = np.max(
+    np.abs(original_scores - loaded_scores)
+)
+
+predictions_match = np.allclose(
+    original_scores,
+    loaded_scores,
+    rtol=1e-6,
+    atol=1e-8
+)
+
+print("RFC MLFLOW MODEL — REPRODUCIBILITY CHECK")
+print("----------------------------------------")
+print("Observations tested:", len(X_valid))
+print("Maximum prediction difference:", max_difference)
+print("Predictions match:", predictions_match)
+
+assert predictions_match, (
+    "Loaded MLflow model predictions differ from original model!"
+)
+
+print("\nPASS: MLflow model reproduces original predictions.")
