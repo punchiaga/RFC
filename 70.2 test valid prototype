@@ -85,3 +85,14 @@ print(f"Validation: {y_valid.mean():.2%}")
 print(f"Test:       {y_test.mean():.2%}")
 
 print("\nFeature schemas match.")
+
+Training: (10113, 691) (10113,)
+Validation: (10030, 691) (10030,)
+Test: (10033, 691) (10033,)
+
+Positive rates:
+Training:   39.84%
+Validation: 3.01%
+Test:       3.52%
+
+Feature schemas match.
