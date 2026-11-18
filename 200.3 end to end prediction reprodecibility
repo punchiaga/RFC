@@ -278,3 +278,7 @@ for name, table_name in rfc_tables.items():
                .orderBy("version", ascending=False)
                .limit(3)
     )
+version	timestamp	operation
+6	2026-11-17T11:57:07.000+00:00	OPTIMIZE
+5	2026-11-17T08:59:39.000+00:00	CREATE OR REPLACE TABLE AS SELECT
+4	2026-11-17T05:59:23.000+00:00	OPTIMIZE
