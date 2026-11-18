@@ -1,0 +1,7 @@
+Step 59 passed! 
+I've reviewed your calibration-decile table. The results support retaining our prior-probability correction for the current RFC baseline, although there's a systematic pattern we should acknowledge.
+
+What this tells us
+- High-scoring observations are underpredicted. Decile 1 has an observed review rate of 8.81%, compared with a predicted 7.36%.
+- Middle deciles are relatively well calibrated. Deciles 4–6 have small absolute differences.
+- Low-scoring observations are slightly overpredicted. The lowest decile predicts 0.78%, versus 0.52% observed.
