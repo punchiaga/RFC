@@ -1,55 +1,47 @@
-# Step 71: Reusable RFC probability correction
+# Step 72: Verify end-to-end RFC inference
 
 import numpy as np
 
-def correct_rfc_probabilities(raw_probabilities, negative_sampling_rate=0.05):
-    """
-    Adjust XGBoost probabilities for negative-class downsampling.
+# 1. Prepare raw validation features using our existing function
+rfc_inference_prepared_df = prepare_rfc_features(
+    rfc_validation_prototype_df
+).select(*RFC_ACTIVE_FEATURE_COLUMNS)
 
-    Assumes:
-      - All positive training observations were retained.
-      - Negative observations were sampled independently at the
-        specified rate.
-    """
-    probabilities = np.asarray(raw_probabilities, dtype=np.float64)
+# 2. Convert to pandas
+rfc_inference_pd = rfc_inference_prepared_df.toPandas()
 
-    if not 0 < negative_sampling_rate <= 1:
-        raise ValueError("negative_sampling_rate must be in (0, 1].")
+# 3. Apply the same numeric types used during training
+rfc_inference_pd[rfc_numeric_pipeline_columns] = (
+    rfc_inference_pd[rfc_numeric_pipeline_columns]
+    .astype(np.float32)
+)
 
-    if not np.all(np.isfinite(probabilities)):
-        raise ValueError("Probabilities must be finite.")
+# 4. Score using the saved MLflow model
+rfc_inference_raw_scores = rfc_loaded_model.predict_proba(
+    rfc_inference_pd[RFC_ACTIVE_FEATURE_COLUMNS]
+)[:, 1]
 
-    if np.any((probabilities < 0) | (probabilities > 1)):
-        raise ValueError("Probabilities must be between 0 and 1.")
-
-    return (
-        negative_sampling_rate * probabilities
-        / (
-            1.0 - probabilities
-            + negative_sampling_rate * probabilities
-        )
-    )
-
-
-# Verify against the previously calculated full-test scores
-recalculated = correct_rfc_probabilities(
-    rfc_full_test_scores["raw_score"].to_numpy(),
+# 5. Apply the verified probability correction
+rfc_inference_corrected_scores = correct_rfc_probabilities(
+    rfc_inference_raw_scores,
     negative_sampling_rate=RFC_DATA_CONFIG["negative_sample_pct"] / 100.0
 )
 
-original = rfc_full_test_scores["corrected_score"].to_numpy()
-
-max_difference = np.max(np.abs(recalculated - original))
-
-print("RFC PROBABILITY CORRECTION — REPRODUCIBILITY")
-print("--------------------------------------------")
-print(f"Test observations: {len(recalculated):,}")
-print(f"Maximum difference: {max_difference:.12f}")
-print(
-    "Predictions match:",
-    np.allclose(recalculated, original, rtol=1e-6, atol=1e-8)
+# 6. Compare with our original validation predictions
+raw_match = np.allclose(
+    rfc_inference_raw_scores,
+    rfc_valid_probabilities_full,
+    rtol=1e-6,
+    atol=1e-8
 )
 
-assert np.allclose(recalculated, original, rtol=1e-6, atol=1e-8)
+print("RFC END-TO-END INFERENCE VERIFICATION")
+print("-------------------------------------")
+print("Observations:", len(rfc_inference_raw_scores))
+print("Raw predictions match:", raw_match)
+print("Mean corrected probability:",
+      f"{rfc_inference_corrected_scores.mean():.4%}")
 
-print("\nPASS: Probability correction is reproducible.")
+assert raw_match, "End-to-end inference predictions do not match!"
+
+print("\nPASS: RFC inference pipeline is reproducible.")
