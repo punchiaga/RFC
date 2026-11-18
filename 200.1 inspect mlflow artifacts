@@ -78,3 +78,37 @@ for model in models:
         "| Model URI:", model.model_uri,
         "| Source Run:", getattr(model, "source_run_id", None)
     )
+
+# Step 67B: Inspect MLflow logged models safely
+
+import mlflow
+import pandas as pd
+
+rfc_run_id = "af83c7a63c4e4558a01cfe1025bba262"
+experiment_id = mlflow.get_run(rfc_run_id).info.experiment_id
+
+models = mlflow.search_logged_models(
+    experiment_ids=[experiment_id],
+    max_results=100,
+    output_format="pandas"
+)
+
+print("Logged models found:", len(models))
+
+# Display only columns that exist in this MLflow version
+columns_to_show = [
+    "model_id",
+    "name",
+    "model_uri",
+    "source_run_id",
+    "status"
+]
+
+available_columns = [
+    col for col in columns_to_show
+    if col in models.columns
+]
+
+print("Available columns:", models.columns.tolist())
+
+display(models[available_columns])
