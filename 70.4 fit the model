@@ -67,3 +67,14 @@ print(
     f"Mean: {rfc_valid_probabilities.mean():.4f}, "
     f"Max: {rfc_valid_probabilities.max():.4f}"
 )
+
+RFC validation results
+----------------------
+Observations: 10,030
+Positive rate: 3.0110%
+ROC-AUC:       0.6995
+PR-AUC (AP):   0.0770
+PR baseline:   0.0301
+
+Predicted probability range:
+Min: 0.0472, Mean: 0.3649, Max: 0.9036
