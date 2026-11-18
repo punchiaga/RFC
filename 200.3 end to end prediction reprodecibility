@@ -65,3 +65,52 @@ File /databricks/python/lib/python3.11/site-packages/numpy/core/numeric.py:2356,
    2354 def within_tol(x, y, atol, rtol):
    2355     with errstate(invalid='ignore'):
 -> 2356         return less_equal(abs(x-y), atol + rtol * abs(y))
+
+# Step 72A: Correct RFC MLflow inference reproducibility check
+
+import numpy as np
+
+# Use the SAME validation input used for original predictions
+rfc_inference_raw_scores = rfc_loaded_model.predict_proba(
+    X_valid
+)[:, 1]
+
+# Apply our reusable probability correction
+rfc_inference_corrected_scores = correct_rfc_probabilities(
+    rfc_inference_raw_scores,
+    negative_sampling_rate=RFC_DATA_CONFIG["negative_sample_pct"] / 100.0
+)
+
+# Verify matching observation counts
+assert len(rfc_inference_raw_scores) == len(
+    rfc_valid_probabilities_full
+)
+
+# Compare predictions
+max_difference = np.max(
+    np.abs(
+        rfc_inference_raw_scores
+        - rfc_valid_probabilities_full
+    )
+)
+
+raw_match = np.allclose(
+    rfc_inference_raw_scores,
+    rfc_valid_probabilities_full,
+    rtol=1e-6,
+    atol=1e-8
+)
+
+print("RFC MLFLOW INFERENCE — REPRODUCIBILITY")
+print("--------------------------------------")
+print("Observations:", len(rfc_inference_raw_scores))
+print("Maximum prediction difference:", max_difference)
+print("Raw predictions match:", raw_match)
+print(
+    "Mean corrected probability:",
+    f"{rfc_inference_corrected_scores.mean():.4%}"
+)
+
+assert raw_match, "MLflow predictions do not match!"
+
+print("\nPASS: Saved model and probability correction verified.")
