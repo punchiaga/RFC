@@ -219,3 +219,11 @@ print(
     f"Mean predicted probability: "
     f"{rfc_valid_probabilities_full.mean():.4%}"
 )
+
+RFC FULL MODEL — VALIDATION PROTOTYPE
+-------------------------------------
+ROC-AUC: 0.7272
+PR-AUC:  0.0963
+Log loss: 0.4660
+Actual positive rate: 3.0110%
+Mean predicted probability: 35.4677%
