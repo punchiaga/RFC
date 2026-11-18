@@ -37,4 +37,37 @@ Observations tested: 10030
 Maximum prediction difference: 0.0
 Predictions match: True
 
+# Step 70: Verify saved RFC model feature contract
+
+saved_preprocessor = rfc_loaded_model.named_steps["preprocessor"]
+
+saved_numeric_columns = list(
+    saved_preprocessor.transformers_[1][2]
+)
+
+saved_categorical_columns = list(
+    saved_preprocessor.transformers_[0][2]
+)
+
+saved_feature_columns = (
+    saved_numeric_columns + saved_categorical_columns
+)
+
+print("RFC SAVED MODEL — FEATURE CONTRACT")
+print("----------------------------------")
+print("Numeric features:", len(saved_numeric_columns))
+print("Categorical features:", len(saved_categorical_columns))
+print("Total input features:", len(saved_feature_columns))
+
+print("\nFeature contract matches notebook:",
+      set(saved_feature_columns) == set(RFC_ACTIVE_FEATURE_COLUMNS))
+
+print("Duplicate features:",
+      len(saved_feature_columns) - len(set(saved_feature_columns)))
+
+assert set(saved_feature_columns) == set(RFC_ACTIVE_FEATURE_COLUMNS)
+assert len(saved_feature_columns) == len(set(saved_feature_columns))
+
+print("\nPASS: Saved model feature contract verified.")
+
 PASS: MLflow model reproduces original predictions.
