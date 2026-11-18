@@ -1,0 +1,39 @@
+# Step 67: Inspect MLflow model artifacts
+
+import mlflow
+
+rfc_run_id = "af83c7a63c4e4558a01cfe1025bba262"
+
+print("RFC BASELINE V1 — MLFLOW ARTIFACT INSPECTION")
+print("-------------------------------------------")
+
+def inspect_artifacts(path="", level=0):
+    artifacts = mlflow.artifacts.list_artifacts(
+        run_id=rfc_run_id,
+        artifact_path=path
+    )
+
+    for artifact in artifacts:
+        print("  " * level + artifact.path)
+
+        if artifact.is_dir:
+            inspect_artifacts(artifact.path, level + 1)
+
+inspect_artifacts()
+
+print("\nMLFLOW LOGGED MODELS")
+print("-------------------")
+
+try:
+    models = mlflow.search_logged_models(
+        filter_string=f"source_run_id = '{rfc_run_id}'"
+    )
+
+    print("Logged models found:", len(models))
+
+    for model in models:
+        print("Model ID:", model.model_id)
+        print("Model URI:", model.model_uri)
+
+except Exception as e:
+    print("Logged-model lookup unavailable:", str(e)[:300])
