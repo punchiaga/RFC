@@ -146,3 +146,51 @@ Top %	Observations	Reviewers	Precision	Recall	F1-score	Lift
 5	110827	12188	0.10997320147617458	0.17318650088809948	0.13452390150219093	3.4637003269509337
 10	221653	19752	0.08911226105669673	0.2806678507992895	0.13527469968633146	2.8066671117534705
 20	443305	31317	0.07064436448945985	0.4450017761989343	0.1219319420650989	2.2250048656844337
+
+# Step 63: RFC baseline — validation vs test comparison
+
+rfc_final_comparison = pd.DataFrame({
+    "Metric": [
+        "ROC-AUC",
+        "PR-AUC",
+        "Precision @ raw 0.5",
+        "Recall @ raw 0.5",
+        "F1 @ raw 0.5",
+        "Lift @ Top 1%",
+        "Lift @ Top 5%",
+        "Lift @ Top 10%",
+        "Lift @ Top 20%",
+        "Corrected Brier",
+        "Corrected Log Loss"
+    ],
+    "Validation": [
+        0.704433549,
+        0.081820063,
+        0.077691383,
+        0.365629173,
+        0.128152127,
+        5.495205515,
+        3.464417304,
+        2.799320397,
+        2.223480639,
+        0.029859,
+        0.131424
+    ],
+    "Test": [
+        test_roc_auc,
+        test_pr_auc,
+        test_precision,
+        test_recall,
+        test_f1,
+        *rfc_test_topk_results["Lift"].to_list(),
+        test_brier_corrected,
+        test_logloss_corrected
+    ]
+})
+
+rfc_final_comparison["Difference"] = (
+    rfc_final_comparison["Test"]
+    - rfc_final_comparison["Validation"]
+)
+
+display(rfc_final_comparison.round(6))
