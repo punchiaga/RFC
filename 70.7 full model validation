@@ -421,3 +421,28 @@ print(f"Top 10% observations: {top_n:,}")
 print(f"Reviewers in top 10%: {top_reviewers:,}")
 print(f"Top-decile review rate: {top_decile_rate:.4%}")
 print(f"Top-decile lift: {top_decile_lift:.2f}x")
+
+RFC FULL VALIDATION — MODEL PERFORMANCE
+---------------------------------------
+Observations: 1,998,356
+Actual reviewers: 62,908
+Overall review rate: 3.1480%
+
+RANKING METRICS
+ROC-AUC:   0.7044
+PR-AUC:    0.0818
+
+CLASSIFICATION METRICS (threshold = 0.5)
+Precision: 0.0777
+Recall:    0.3656
+F1-score:  0.1282
+
+CONFUSION MATRIX
+[[1662393  273055]
+ [  39907   23001]]
+
+TOP-DECILE PERFORMANCE
+Top 10% observations: 199,836
+Reviewers in top 10%: 17,610
+Top-decile review rate: 8.8122%
+Top-decile lift: 2.80x
