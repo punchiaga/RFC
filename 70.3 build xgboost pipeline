@@ -27,3 +27,21 @@ rfc_xgb_prototype = Pipeline(
 print("RFC XGBoost prototype pipeline created.")
 print("Pipeline steps:", list(rfc_xgb_prototype.named_steps.keys()))
 print("Model:", type(rfc_xgb_prototype.named_steps["classifier"]).__name__)
+
+Why these initial parameters?
+Parameter	Reason
+n_estimators=200	    Moderate number of boosting rounds for a prototype
+max_depth=4	            Limits tree complexity and initial overfitting risk
+learning_rate=0.05	    Conservative learning rate
+subsample=0.8	        Adds row sampling during boosting
+colsample_bytree=0.8	Adds feature sampling
+tree_method="hist"	    Efficient histogram-based training
+eval_metric="aucpr"	    Appropriate metric to monitor for imbalanced outcomes
+n_jobs=4	            Limits CPU parallelism for this small prototype
+
+
+We're also intentionally not using scale_pos_weight yet. Since we retained all training positives but sampled only 5% of training negatives, the prototype's positive rate is already artificially elevated. Additional positive-class weighting could make that imbalance worse.
+
+Architectural safeguard: Validation and test data must not be used to fit the preprocessing pipeline. In our next step, we'll fit on X_train, y_train, then evaluate predictions on validation and test separately.
+
+One caveat: although we have a representative validation sample, the raw model probabilities will still require calibration before they can be interpreted as actual 90-day cover-review probabilities.
