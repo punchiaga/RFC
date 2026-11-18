@@ -30,3 +30,30 @@ print("Features with absolute values above 1 million:",
       len(rfc_large_numeric_results))
 
 display(rfc_large_numeric_results)
+
+# Step 44: Convert numeric model inputs to float32
+
+X_train[rfc_numeric_pipeline_columns] = (
+    X_train[rfc_numeric_pipeline_columns]
+    .astype("float32")
+)
+
+print("Training feature shape:", X_train.shape)
+
+print(
+    "Active model feature count:",
+    len(RFC_ACTIVE_FEATURE_COLUMNS)
+)
+
+print(
+    "Numeric float32 columns:",
+    X_train[rfc_numeric_pipeline_columns]
+    .select_dtypes(include=["float32"])
+    .shape[1]
+)
+
+print(
+    "Prototype memory:",
+    round(X_train.memory_usage(deep=True).sum() / 1024**2, 2),
+    "MB"
+)
