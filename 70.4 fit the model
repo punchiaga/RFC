@@ -30,3 +30,40 @@ print(
 print("\nTraining observations:", len(X_train))
 print("Validation observations:", len(X_valid))
 print("Test observations:", len(X_test))
+
+# Step 30: Evaluate RFC prototype on validation data
+
+from sklearn.metrics import (
+    roc_auc_score,
+    average_precision_score
+)
+
+# Use the fitted pipeline — no refitting
+rfc_valid_probabilities = (
+    rfc_xgb_prototype.predict_proba(X_valid)[:, 1]
+)
+
+rfc_valid_roc_auc = roc_auc_score(
+    y_valid,
+    rfc_valid_probabilities
+)
+
+rfc_valid_pr_auc = average_precision_score(
+    y_valid,
+    rfc_valid_probabilities
+)
+
+print("RFC validation results")
+print("----------------------")
+print(f"Observations: {len(y_valid):,}")
+print(f"Positive rate: {y_valid.mean():.4%}")
+print(f"ROC-AUC:       {rfc_valid_roc_auc:.4f}")
+print(f"PR-AUC (AP):   {rfc_valid_pr_auc:.4f}")
+print(f"PR baseline:   {y_valid.mean():.4f}")
+
+print("\nPredicted probability range:")
+print(
+    f"Min: {rfc_valid_probabilities.min():.4f}, "
+    f"Mean: {rfc_valid_probabilities.mean():.4f}, "
+    f"Max: {rfc_valid_probabilities.max():.4f}"
+)
