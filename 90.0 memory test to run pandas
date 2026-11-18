@@ -119,3 +119,53 @@ print(
     f"Estimated memory reduction: "
     f"{100 * (1 - estimated_optimised_memory / current_total_memory):.1f}%"
 )
+
+# Step 40: Check numeric precision before float32 conversion
+
+import numpy as np
+import pandas as pd
+
+precision_results = []
+
+for col in rfc_numeric_pipeline_columns:
+    original = pd.to_numeric(X_train[col], errors="coerce")
+    valid = original.dropna()
+
+    if valid.empty:
+        continue
+
+    converted = valid.astype(np.float32).astype(np.float64)
+
+    absolute_error = np.abs(valid.to_numpy(dtype=np.float64) - converted)
+
+    relative_error = absolute_error / np.maximum(
+        np.abs(valid.to_numpy(dtype=np.float64)), 1.0
+    )
+
+    precision_results.append({
+        "feature": col,
+        "max_abs_value": np.abs(valid).max(),
+        "max_abs_error": absolute_error.max(),
+        "max_rel_error": relative_error.max(),
+        "values_changed": int((absolute_error > 0).sum())
+    })
+
+rfc_precision_check = pd.DataFrame(precision_results)
+
+print("RFC FLOAT32 PRECISION CHECK")
+print("---------------------------")
+
+print("Numeric features checked:", len(rfc_precision_check))
+
+print(
+    "Features with relative error > 1e-5:",
+    (rfc_precision_check["max_rel_error"] > 1e-5).sum()
+)
+
+print("\nTop 10 features by absolute conversion error:")
+
+display(
+    rfc_precision_check
+    .sort_values("max_abs_error", ascending=False)
+    .head(10)
+)
