@@ -226,3 +226,23 @@ for dataset_name, dataset_df in rfc_dataset_tables.items():
     print(f"{'=' * 60}")
 
     dataset_df.explain(mode="formatted")
+
+# Step 74B: Inspect training Delta table history
+
+rfc_train_table = (
+    "bdp4_prod_ml_build."
+    "hi_customer_right_fit_cover_data."
+    "rfc_training_20261020105807_train_sampled"
+)
+
+history_df = spark.sql(
+    f"DESCRIBE HISTORY {rfc_train_table}"
+)
+
+display(
+    history_df.select(
+        "version",
+        "timestamp",
+        "operation"
+    ).orderBy("version", ascending=False)
+)
