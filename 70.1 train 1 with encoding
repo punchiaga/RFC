@@ -1,3 +1,7 @@
+# handle_unknown="ignore" means:
+
+# If validation, test or production data contains a category that was not observed when the encoder was fitted, the transformation will not fail.
+
 # Step 25: Build RFC preprocessing pipeline
 
 from sklearn.compose import ColumnTransformer
