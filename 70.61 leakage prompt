@@ -1,0 +1,36 @@
+ I am investigating potential target leakage in our Right Fit Cover (RFC) propensity model.
+
+Our model predicts whether a policyholder will review their insurance cover within the next 90 days, using `effective_dttm` as the prediction snapshot timestamp.
+
+Please investigate the feature **`call_cover_review_cnt_12_month`**.
+
+**1. Locate the feature**
+- Identify the table or view containing this column.
+- Identify the upstream source tables and relevant event timestamp columns.
+- If possible, locate the SQL or PySpark transformation that calculates this feature.
+
+**2. Explain the calculation**
+- What business events are counted?
+- How is a cover-review call identified?
+- What is the exact 12-month aggregation window?
+- Is the window calculated relative to `effective_dttm`, a batch processing date, or another timestamp?
+
+**3. Investigate potential target leakage**
+- Does the calculation explicitly exclude calls occurring on or after `effective_dttm`?
+- Could calls occurring within the 90 days following `effective_dttm` be included?
+- Could historical call records have been ingested or updated after the snapshot?
+- Are there any joins that could introduce future information?
+
+**4. Provide evidence**
+- Show the actual SQL logic, including relevant JOIN, WHERE, CASE and aggregation conditions.
+- Identify the source tables and timestamp columns used.
+- Clearly distinguish verified findings from assumptions.
+- If the feature-generation SQL is unavailable, explain what cannot be verified and identify where the upstream transformation should be investigated.
+
+**5. Conclusion**
+Classify this feature as one of:
+- Point-in-time safe, with supporting evidence
+- Confirmed target leakage, with supporting evidence
+- Inconclusive — requires further investigation
+
+Do not generate hypothetical SQL and present it as the existing implementation. I need the actual calculation logic or a clear explanation of why it cannot be retrieved.
