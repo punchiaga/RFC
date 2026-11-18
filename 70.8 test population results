@@ -1,0 +1,34 @@
+# Step 60: Prepare full test population for bounded scoring
+
+from pyspark.sql import functions as F
+
+RFC_TEST_BATCHES = 24
+
+rfc_test_batched_df = (
+    rfc_test_df
+    .withColumn(
+        "_test_batch",
+        F.pmod(
+            F.xxhash64(
+                F.col("policy_id"),
+                F.col("effective_dttm"),
+                F.lit(42)
+            ),
+            F.lit(RFC_TEST_BATCHES)
+        )
+    )
+)
+
+print("RFC TEST BATCH DISTRIBUTION")
+print("---------------------------")
+
+rfc_test_batched_df.groupBy(
+    "_test_batch"
+).count().orderBy(
+    "_test_batch"
+).show(RFC_TEST_BATCHES)
+
+print(
+    "Total test observations:",
+    f"{rfc_test_batched_df.count():,}"
+)
