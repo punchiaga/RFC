@@ -1,0 +1,66 @@
+# Step 54A: RFC Full Validation — Lift Chart
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+lift_df = rfc_full_topk_results.sort_values("Top %")
+
+labels = [f"Top {int(x)}%" for x in lift_df["Top %"]]
+lift_values = lift_df["Lift"].to_numpy()
+
+fig, ax = plt.subplots(figsize=(10, 6))
+
+bars = ax.bar(
+    labels,
+    lift_values,
+    color="#2878B5",
+    width=0.55
+)
+
+# Random targeting baseline
+ax.axhline(
+    y=1.0,
+    color="red",
+    linestyle="--",
+    linewidth=1.5,
+    label="Random targeting (1.0x)"
+)
+
+# Reference benchmark
+ax.axhline(
+    y=3.5,
+    color="orange",
+    linestyle=":",
+    linewidth=1.8,
+    label="Reference benchmark (3.5x)"
+)
+
+# Value labels above bars
+for bar, lift in zip(bars, lift_values):
+    ax.text(
+        bar.get_x() + bar.get_width() / 2,
+        bar.get_height() + 0.10,
+        f"{lift:.2f}x",
+        ha="center",
+        va="bottom",
+        fontsize=12,
+        fontweight="bold"
+    )
+
+ax.set_title(
+    "RFC Propensity Model — Full Validation Lift",
+    fontsize=15,
+    fontweight="bold",
+    pad=18
+)
+
+ax.set_xlabel("Targeting Population", fontsize=12)
+ax.set_ylabel("Lift vs Random Targeting", fontsize=12)
+
+ax.set_ylim(0, max(lift_values) + 0.9)
+ax.grid(axis="y", linestyle="--", alpha=0.25)
+ax.set_axisbelow(True)
+ax.legend(loc="upper right")
+
+plt.tight_layout()
+plt.show()
