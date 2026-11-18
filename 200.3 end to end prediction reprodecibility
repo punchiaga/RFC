@@ -178,3 +178,23 @@ assert not invalid_numeric
 assert not invalid_categorical
 
 print("\nPASS: RFC feature preparation schema verified.")
+
+# Step 74: Inspect RFC Delta dataset versions
+
+rfc_dataset_tables = {
+    "train": rfc_train_df,
+    "validation": rfc_validation_df,
+    "test": rfc_test_df
+}
+
+print("RFC DATASET LINEAGE CHECK")
+print("-------------------------")
+
+for dataset_name, dataset_df in rfc_dataset_tables.items():
+
+    print(f"\nDataset: {dataset_name}")
+
+    print("Spark source plan:")
+    print(dataset_df._jdf.queryExecution().analyzed().toString()[:1000])
+
+    print("Columns:", len(dataset_df.columns))
