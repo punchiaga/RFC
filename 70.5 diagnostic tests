@@ -39,3 +39,95 @@ rfc_lift_results = pd.DataFrame(results)
 print("RFC VALIDATION — TOP-K PERFORMANCE")
 print(f"Population review rate: {baseline_rate:.2%}")
 display(rfc_lift_results)
+
+My technical assessment
+1. Ranking signal is present. The top 1% has an observed review rate of 18.81%, compared with the validation baseline of 3.01%.
+
+2. Performance decreases as we expand the targeting population. This is expected: the highest-scored observations contain the strongest concentration of positives.
+
+3. Top 10% captures approximately one-quarter of observed reviews. That could be commercially useful if RFC operates with limited campaign capacity.
+
+4. These results are preliminary. There are only 19 positive cases in the top 1%, so that estimate is statistically noisy. We also have not completed point-in-time leakage checks or evaluated the full population.
+
+One additional concern: because we have repeated snapshots for some policies, these are currently observation-level metrics, not necessarily unique-customer targeting metrics. We must distinguish those before presenting business value.
+
+# Step 31A: Visualise RFC validation lift by targeting proportion
+
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots(figsize=(9, 5))
+
+bars = ax.bar(
+    rfc_lift_results["Top %"].astype(str) + "%",
+    rfc_lift_results["Lift@K"],
+    color="#2563EB",
+    width=0.55
+)
+
+# Baseline: random targeting produces 1x lift
+ax.axhline(
+    y=1.0,
+    color="#DC2626",
+    linestyle="--",
+    linewidth=1.5,
+    label="Random targeting (1× lift)"
+)
+
+# Display lift values above bars
+for bar in bars:
+    height = bar.get_height()
+
+    ax.annotate(
+        f"{height:.2f}×",
+        xy=(bar.get_x() + bar.get_width() / 2, height),
+        xytext=(0, 5),
+        textcoords="offset points",
+        ha="center",
+        va="bottom",
+        fontsize=11,
+        fontweight="bold"
+    )
+
+ax.set_title(
+    "RFC Validation — Lift by Targeting Proportion",
+    fontsize=14,
+    fontweight="bold"
+)
+
+ax.set_xlabel("Top % of Scored Observations")
+ax.set_ylabel("Lift over Population Review Rate")
+
+ax.set_ylim(0, rfc_lift_results["Lift@K"].max() * 1.2)
+
+ax.legend()
+ax.grid(axis="y", alpha=0.2)
+
+plt.tight_layout()
+plt.show()
+
+# Step 32: Inspect RFC XGBoost feature importance
+
+import pandas as pd
+
+rfc_fitted_preprocessor = (
+    rfc_xgb_prototype.named_steps["preprocessor"]
+)
+
+rfc_fitted_classifier = (
+    rfc_xgb_prototype.named_steps["classifier"]
+)
+
+rfc_transformed_feature_names = (
+    rfc_fitted_preprocessor.get_feature_names_out()
+)
+
+rfc_feature_importance = pd.DataFrame({
+    "feature": rfc_transformed_feature_names,
+    "importance": rfc_fitted_classifier.feature_importances_
+}).sort_values(
+    "importance", ascending=False
+).reset_index(drop=True)
+
+print("Transformed features:", len(rfc_transformed_feature_names))
+print("\nTop 20 features:")
+display(rfc_feature_importance.head(20))
