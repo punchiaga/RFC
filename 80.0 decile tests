@@ -72,3 +72,14 @@ print(f"Top-decile review rate: {top_decile_precision:.4%}")
 print(f"Top-decile lift: {top_decile_lift:.2f}x")
 
 print("\nPrototype top-decile lift: 2.55x")
+
+RFC FULL MODEL — TOP-DECILE LIFT
+--------------------------------
+Validation observations: 10,030
+Overall review rate: 3.0110%
+Top-decile observations: 1,003
+Top-decile reviewers: 89
+Top-decile review rate: 8.8734%
+Top-decile lift: 2.95x
+
+Prototype top-decile lift: 2.55x
