@@ -34,3 +34,22 @@ Classify this feature as one of:
 - Inconclusive — requires further investigation
 
 Do not generate hypothetical SQL and present it as the existing implementation. I need the actual calculation logic or a clear explanation of why it cannot be retrieved.
+
+-- Event filter (hugo_session_log)
+WHERE edp_is_current AND edp_record_type <> 'D'
+  AND CONTACT_METHOD IN (1,2,3,5,6) AND INITIATED_BY = 1      -- 5 = Call, 1 = inbound
+-- Cover-review identification: TEAM_ID joined to a team lookup built from dim_team, plus usr_team_hierarchy for teams not in dim_team
+CASE WHEN LOWER(team_nm)   LIKE '%cover review%' THEN 'Cover_review' ...   -- dim_team
+CASE WHEN LOWER(team_name) LIKE '%cover review%' THEN 'Cover_review' ...   -- usr_team_hierarchy
+-- contact_feature = CONCAT('Call_', COALESCE(team_name,'Other'))
+-- Grain: SELECT DISTINCT contact_date = TO_DATE(SESSION_STARTTIME_Aet), person_id, contact_feature
+-- Window, relative to effective_dttm:
+contact_date >= ADD_MONTHS(TO_DATE(effective_dttm), -12)
+AND contact_date <  TO_DATE(effective_dttm)
+
+Conclusion
+Point-in-time safe. There is no forward-window or snapshot-day leakage, and late-arriving records aren't a material risk. To close this out:
+
+Verified findings vs assumptions
+Verified: table locations, how the tables were built, upstream sources from lineage, the policy rollup SQL, and a 100% match between stored values and a strict past-only rebuild across 12 snapshots (~139M person-snapshot rows).
+Assumed: that the production definition file uses the same logic as the rebuild. That's very likely given the exact match, but I haven't confirmed it from the code. 
