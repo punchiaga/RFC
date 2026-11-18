@@ -1,0 +1,26 @@
+# Step 33: Inventory potentially leakage-sensitive RFC features
+
+RFC_LEAKAGE_REVIEW_TERMS = [
+    "review",
+    "coverchange",
+    "cover_change",
+    "retention",
+    "future",
+    "call"
+]
+
+rfc_leakage_review_columns = sorted([
+    c for c in RFC_ACTIVE_FEATURE_COLUMNS
+    if any(
+        term in c.lower()
+        for term in RFC_LEAKAGE_REVIEW_TERMS
+    )
+])
+
+print(
+    "Features requiring point-in-time review:",
+    len(rfc_leakage_review_columns)
+)
+
+for c in rfc_leakage_review_columns:
+    print(c)
