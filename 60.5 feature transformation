@@ -63,3 +63,20 @@ RFC prototype feature transformations completed.
 |NULL                 |NULL                            |NULL                   |1.0                            |
 +---------------------+--------------------------------+-----------------------+-------------------------------+
 only showing top 10 rows
+
+# Step 41: Inspect encoded date features
+
+date_columns = [
+    "policy_org_from_date",
+    "policy_org_to_date"
+]
+
+for col in date_columns:
+    print(f"\nFEATURE: {col}")
+    print("-" * 50)
+
+    print("Data type:", X_train[col].dtype)
+    print("Missing values:", X_train[col].isna().sum())
+
+    print("\nMost frequent values:")
+    print(X_train[col].value_counts(dropna=False).head(10))
