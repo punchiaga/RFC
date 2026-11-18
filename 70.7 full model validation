@@ -179,3 +179,185 @@ print("\nPREVIOUS RESULTS")
 print("----------------")
 print("Prototype top-decile lift: 2.55x")
 print("Full model on 10K validation sample: 2.95x")
+
+# Step 51: Prepare full validation dataset for batch scoring
+
+from pyspark.sql import functions as F
+
+RFC_VALIDATION_BATCHES = 20
+
+rfc_validation_batched_df = (
+    rfc_validation_df
+    .withColumn(
+        "_validation_batch",
+        F.pmod(
+            F.xxhash64(
+                F.col("policy_id"),
+                F.col("effective_dttm"),
+                F.lit(42)
+            ),
+            F.lit(RFC_VALIDATION_BATCHES)
+        )
+    )
+)
+
+print("Validation batch distribution:")
+
+rfc_validation_batched_df.groupBy(
+    "_validation_batch"
+).count().orderBy(
+    "_validation_batch"
+).show(20)
+
+print(
+    "Total validation rows:",
+    rfc_validation_batched_df.count()
+)
+
+# Step 52: Score full RFC validation data in bounded batches
+
+import gc
+import numpy as np
+import pandas as pd
+from pyspark.sql import functions as F
+
+rfc_validation_predictions = []
+
+for batch_id in range(RFC_VALIDATION_BATCHES):
+
+    # Select one deterministic validation batch
+    batch_spark_df = (
+        rfc_validation_batched_df
+        .filter(F.col("_validation_batch") == batch_id)
+    )
+
+    # Apply the same feature transformations used for training
+    batch_prepared_df = (
+        prepare_rfc_features(batch_spark_df)
+        .select(*RFC_ACTIVE_FEATURE_COLUMNS, "target")
+    )
+
+    # Collect only this batch
+    batch_pd = batch_prepared_df.toPandas()
+
+    # Match training numeric types
+    batch_pd[rfc_numeric_pipeline_columns] = (
+        batch_pd[rfc_numeric_pipeline_columns]
+        .astype(np.float32)
+    )
+
+    # Generate probabilities using the fitted full pipeline
+    batch_scores = rfc_xgb_full.predict_proba(
+        batch_pd[RFC_ACTIVE_FEATURE_COLUMNS]
+    )[:, 1]
+
+    # Retain only actual labels and predictions
+    rfc_validation_predictions.append(
+        pd.DataFrame({
+            "actual": batch_pd["target"].to_numpy(dtype=np.int8),
+            "score": batch_scores
+        })
+    )
+
+    print(
+        f"Batch {batch_id + 1}/{RFC_VALIDATION_BATCHES}: "
+        f"{len(batch_pd):,} observations scored"
+    )
+
+    del batch_pd, batch_prepared_df, batch_spark_df, batch_scores
+    gc.collect()
+
+# Combine lightweight prediction results
+rfc_full_validation_scores = pd.concat(
+    rfc_validation_predictions,
+    ignore_index=True
+)
+
+del rfc_validation_predictions
+gc.collect()
+
+# Validate completeness
+assert len(rfc_full_validation_scores) == 1_998_356
+assert int(rfc_full_validation_scores["actual"].sum()) == 62_908
+
+print("\nFULL VALIDATION SCORING COMPLETE")
+print("--------------------------------")
+print("Observations:", f"{len(rfc_full_validation_scores):,}")
+print(
+    "Actual reviewers:",
+    f"{int(rfc_full_validation_scores['actual'].sum()):,}"
+)
+print(
+    "Mean predicted score:",
+    f"{rfc_full_validation_scores['score'].mean():.4%}"
+)
+Batch 1/20: 99,940 observations scored
+Batch 2/20: 99,995 observations scored
+Batch 3/20: 99,865 observations scored
+Batch 4/20: 100,324 observations scored
+Batch 5/20: 99,854 observations scored
+Batch 6/20: 99,731 observations scored
+Batch 7/20: 99,825 observations scored
+Batch 8/20: 99,876 observations scored
+Batch 9/20: 99,947 observations scored
+Batch 10/20: 99,996 observations scored
+Batch 11/20: 100,099 observations scored
+Batch 12/20: 99,946 observations scored
+Batch 13/20: 99,441 observations scored
+Batch 14/20: 100,383 observations scored
+Batch 15/20: 99,777 observations scored
+Batch 16/20: 99,661 observations scored
+Batch 17/20: 100,137 observations scored
+Batch 18/20: 99,805 observations scored
+Batch 19/20: 99,528 observations scored
+Batch 20/20: 100,226 observations scored
+
+FULL VALIDATION SCORING COMPLETE
+--------------------------------
+Observations: 1,998,356
+Actual reviewers: 62,908
+Mean predicted score: 35.6643%
+
+# Step 53: Evaluate full RFC validation population
+
+import numpy as np
+from sklearn.metrics import roc_auc_score, average_precision_score
+
+y_true = rfc_full_validation_scores["actual"].to_numpy()
+y_score = rfc_full_validation_scores["score"].to_numpy()
+
+# Overall ranking metrics
+rfc_full_validation_roc_auc = roc_auc_score(y_true, y_score)
+rfc_full_validation_pr_auc = average_precision_score(y_true, y_score)
+
+# Top-decile lift
+top_n = int(np.ceil(len(y_true) * 0.10))
+
+top_indices = np.argpartition(y_score, -top_n)[-top_n:]
+
+top_reviewers = int(y_true[top_indices].sum())
+
+overall_review_rate = y_true.mean()
+top_decile_review_rate = top_reviewers / top_n
+top_decile_lift = top_decile_review_rate / overall_review_rate
+
+print("RFC FULL VALIDATION — MODEL PERFORMANCE")
+print("---------------------------------------")
+print(f"Observations: {len(y_true):,}")
+print(f"Actual reviewers: {int(y_true.sum()):,}")
+print(f"Overall review rate: {overall_review_rate:.4%}")
+
+print(f"\nROC-AUC: {rfc_full_validation_roc_auc:.4f}")
+print(f"PR-AUC:  {rfc_full_validation_pr_auc:.4f}")
+
+print("\nTOP-DECILE PERFORMANCE")
+print("----------------------")
+print(f"Top 10% observations: {top_n:,}")
+print(f"Reviewers in top 10%: {top_reviewers:,}")
+print(f"Top-decile review rate: {top_decile_review_rate:.4%}")
+print(f"Top-decile lift: {top_decile_lift:.2f}x")
+
+print("\nPREVIOUS RESULTS")
+print("----------------")
+print("Prototype top-decile lift: 2.55x")
+print("Full model on 10K validation sample: 2.95x")
