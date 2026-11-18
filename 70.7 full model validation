@@ -31,3 +31,81 @@ print(
     "Total validation rows:",
     rfc_validation_batched_df.count()
 )
+
+# Step 52: Score full RFC validation data in bounded batches
+
+import gc
+import numpy as np
+import pandas as pd
+from pyspark.sql import functions as F
+
+rfc_validation_predictions = []
+
+for batch_id in range(RFC_VALIDATION_BATCHES):
+
+    # Select one deterministic validation batch
+    batch_spark_df = (
+        rfc_validation_batched_df
+        .filter(F.col("_validation_batch") == batch_id)
+    )
+
+    # Apply the same feature transformations used for training
+    batch_prepared_df = (
+        prepare_rfc_features(batch_spark_df)
+        .select(*RFC_ACTIVE_FEATURE_COLUMNS, "target")
+    )
+
+    # Collect only this batch
+    batch_pd = batch_prepared_df.toPandas()
+
+    # Match training numeric types
+    batch_pd[rfc_numeric_pipeline_columns] = (
+        batch_pd[rfc_numeric_pipeline_columns]
+        .astype(np.float32)
+    )
+
+    # Generate probabilities using the fitted full pipeline
+    batch_scores = rfc_xgb_full.predict_proba(
+        batch_pd[RFC_ACTIVE_FEATURE_COLUMNS]
+    )[:, 1]
+
+    # Retain only actual labels and predictions
+    rfc_validation_predictions.append(
+        pd.DataFrame({
+            "actual": batch_pd["target"].to_numpy(dtype=np.int8),
+            "score": batch_scores
+        })
+    )
+
+    print(
+        f"Batch {batch_id + 1}/{RFC_VALIDATION_BATCHES}: "
+        f"{len(batch_pd):,} observations scored"
+    )
+
+    del batch_pd, batch_prepared_df, batch_spark_df, batch_scores
+    gc.collect()
+
+# Combine lightweight prediction results
+rfc_full_validation_scores = pd.concat(
+    rfc_validation_predictions,
+    ignore_index=True
+)
+
+del rfc_validation_predictions
+gc.collect()
+
+# Validate completeness
+assert len(rfc_full_validation_scores) == 1_998_356
+assert int(rfc_full_validation_scores["actual"].sum()) == 62_908
+
+print("\nFULL VALIDATION SCORING COMPLETE")
+print("--------------------------------")
+print("Observations:", f"{len(rfc_full_validation_scores):,}")
+print(
+    "Actual reviewers:",
+    f"{int(rfc_full_validation_scores['actual'].sum()):,}"
+)
+print(
+    "Mean predicted score:",
+    f"{rfc_full_validation_scores['score'].mean():.4%}"
+)
