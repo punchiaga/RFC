@@ -1,0 +1,41 @@
+Can RFC identify a concentrated group of customers who are substantially more likely to review their cover?
+
+# Step 31: RFC validation ranking performance
+
+import numpy as np
+import pandas as pd
+
+rfc_validation_ranking = pd.DataFrame({
+    "actual": np.asarray(y_valid),
+    "score": rfc_valid_probabilities
+}).sort_values("score", ascending=False).reset_index(drop=True)
+
+total_positives = rfc_validation_ranking["actual"].sum()
+baseline_rate = rfc_validation_ranking["actual"].mean()
+
+results = []
+
+for pct in [1, 5, 10, 20]:
+    k = int(np.ceil(len(rfc_validation_ranking) * pct / 100))
+
+    selected = rfc_validation_ranking.head(k)
+    captured = int(selected["actual"].sum())
+
+    precision_at_k = captured / k
+    recall_at_k = captured / total_positives
+    lift_at_k = precision_at_k / baseline_rate
+
+    results.append({
+        "Top %": pct,
+        "Customers": k,
+        "Actual reviewers": captured,
+        "Precision@K": round(precision_at_k, 4),
+        "Recall@K": round(recall_at_k, 4),
+        "Lift@K": round(lift_at_k, 2)
+    })
+
+rfc_lift_results = pd.DataFrame(results)
+
+print("RFC VALIDATION — TOP-K PERFORMANCE")
+print(f"Population review rate: {baseline_rate:.2%}")
+display(rfc_lift_results)
