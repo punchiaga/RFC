@@ -206,3 +206,23 @@ File <command-8219229650323814>, line 17
 ---> 17 print(dataset_df._jdf.queryExecution().analyzed().toString()[:1000])
      19 print("Columns:", len(dataset_df.columns))
 
+# Step 74A: Inspect RFC dataset sources
+# Compatible with Databricks Standard access mode
+
+rfc_dataset_tables = {
+    "train": rfc_train_df,
+    "validation": rfc_validation_df,
+    "test": rfc_test_df
+}
+
+print("RFC DATASET SOURCE INSPECTION")
+print("-----------------------------")
+
+for dataset_name, dataset_df in rfc_dataset_tables.items():
+
+    print(f"\n{'=' * 60}")
+    print(f"Dataset: {dataset_name}")
+    print(f"Columns: {len(dataset_df.columns)}")
+    print(f"{'=' * 60}")
+
+    dataset_df.explain(mode="formatted")
