@@ -80,3 +80,40 @@ for col in date_columns:
 
     print("\nMost frequent values:")
     print(X_train[col].value_counts(dropna=False).head(10))
+
+
+FEATURE: policy_org_from_date
+--------------------------------------------------
+Data type: float64
+Missing values: 5728
+
+Most frequent values:
+NaN           5728
+20240201.0      26
+20241001.0      19
+20250205.0      12
+20100101.0      12
+20240603.0      10
+20000702.0      10
+20250401.0       8
+20220901.0       8
+20250404.0       8
+Name: policy_org_from_date, dtype: int64
+
+FEATURE: policy_org_to_date
+--------------------------------------------------
+Data type: float64
+Missing values: 5728
+
+Most frequent values:
+NaN           5728
+99991231.0    2808
+29991231.0      36
+20991231.0      27
+20151222.0      13
+20991230.0       6
+20221201.0       5
+20250601.0       5
+29991230.0       5
+20260203.0       5
+Name: policy_org_to_date, dtype: int64
