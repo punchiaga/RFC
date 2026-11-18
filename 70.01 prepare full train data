@@ -1,0 +1,14 @@
+# Step 45: Prepare full sampled RFC training data in Spark
+
+rfc_full_train_prepared_df = prepare_rfc_features(
+    rfc_train_df
+).select(
+    *RFC_ACTIVE_FEATURE_COLUMNS,
+    "target"
+)
+
+print("Full training columns:", len(rfc_full_train_prepared_df.columns))
+print("Active model features:", len(RFC_ACTIVE_FEATURE_COLUMNS))
+
+print("\nTarget distribution:")
+rfc_full_train_prepared_df.groupBy("target").count().show()
