@@ -41,3 +41,25 @@ for artifact in mlflow.artifacts.list_artifacts(
     run_id=rfc_run_id
 ):
     print(artifact.path)
+
+RFC MLFLOW RUN VERIFICATION
+---------------------------
+Run ID: af83c7a63c4e4558a01cfe1025bba262
+Run name: shivering-cod-718
+Status: FINISHED
+
+Logged model parameters:
+classifier__colsample_bylevel: None
+classifier__colsample_bynode: None
+classifier__colsample_bytree: 0.8
+classifier__learning_rate: 0.05
+classifier__max_depth: 4
+classifier__n_estimators: 200
+classifier__random_state: 42
+classifier__subsample: 0.8
+
+Logged artifacts:
+estimator.html
+training_confusion_matrix.png
+training_precision_recall_curve.png
+training_roc_curve.png
