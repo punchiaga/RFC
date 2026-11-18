@@ -1,0 +1,40 @@
+# Step 36: RFC validation review rate by score decile
+
+import pandas as pd
+
+rfc_decile_df = pd.DataFrame({
+    "actual": y_valid.to_numpy(),
+    "score": rfc_valid_probabilities
+})
+
+# Decile 1 = highest predicted propensity
+rfc_decile_df["decile"] = (
+    pd.qcut(
+        rfc_decile_df["score"].rank(method="first", ascending=False),
+        q=10,
+        labels=False
+    ) + 1
+)
+
+rfc_decile_results = (
+    rfc_decile_df
+    .groupby("decile")
+    .agg(
+        observations=("actual", "size"),
+        reviewers=("actual", "sum"),
+        avg_predicted_score=("score", "mean")
+    )
+    .reset_index()
+)
+
+rfc_decile_results["review_rate"] = (
+    rfc_decile_results["reviewers"]
+    / rfc_decile_results["observations"]
+)
+
+rfc_decile_results["lift"] = (
+    rfc_decile_results["review_rate"]
+    / y_valid.mean()
+)
+
+display(rfc_decile_results)
