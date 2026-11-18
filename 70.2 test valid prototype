@@ -36,3 +36,52 @@ rfc_test_prototype_prepared_df = prepare_rfc_features(
 
 print("Validation prototype:", rfc_validation_prototype_prepared_df.count())
 print("Test prototype:", rfc_test_prototype_prepared_df.count())
+
+# Step 27: Prepare validation and test data for sklearn
+
+import pandas as pd
+
+def prepare_rfc_pandas_dataset(spark_df):
+    pdf = (
+        spark_df
+        .select(*RFC_ACTIVE_FEATURE_COLUMNS, "target")
+        .toPandas()
+    )
+
+    X = pdf[RFC_ACTIVE_FEATURE_COLUMNS].copy()
+    y = pdf["target"].astype(int)
+
+    # Use the same numeric conversions as training
+    numeric_columns = (
+        rfc_binary_columns
+        + rfc_numeric_model_columns
+        + ["policy_org_discount_per_missing"]
+    )
+
+    for c in numeric_columns:
+        X[c] = pd.to_numeric(X[c], errors="coerce")
+
+    return X, y
+
+
+X_valid, y_valid = prepare_rfc_pandas_dataset(
+    rfc_validation_prototype_prepared_df
+)
+
+X_test, y_test = prepare_rfc_pandas_dataset(
+    rfc_test_prototype_prepared_df
+)
+
+assert list(X_train.columns) == list(X_valid.columns)
+assert list(X_train.columns) == list(X_test.columns)
+
+print("Training:", X_train.shape, y_train.shape)
+print("Validation:", X_valid.shape, y_valid.shape)
+print("Test:", X_test.shape, y_test.shape)
+
+print("\nPositive rates:")
+print(f"Training:   {y_train.mean():.2%}")
+print(f"Validation: {y_valid.mean():.2%}")
+print(f"Test:       {y_test.mean():.2%}")
+
+print("\nFeature schemas match.")
