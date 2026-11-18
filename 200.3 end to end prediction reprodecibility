@@ -255,3 +255,26 @@ version	timestamp	operation
 2	2026-11-17T05:30:44.000+00:00	OPTIMIZE
 1	2026-11-17T05:30:15.000+00:00	CREATE OR REPLACE TABLE AS SELECT
 0	2026-11-17T05:16:58.000+00:00	CREATE OR REPLACE TABLE AS SELECT
+
+
+# Step 75: Inspect latest Delta operations for RFC datasets
+
+rfc_tables = {
+    "train": (
+        "bdp4_prod_ml_build.hi_customer_right_fit_cover_data."
+        "rfc_training_20261020105807_train_sampled"
+    )
+}
+
+for name, table_name in rfc_tables.items():
+    history = spark.sql(
+        f"DESCRIBE HISTORY {table_name}"
+    )
+
+    print(f"\n{name.upper()} — Latest Delta operations")
+
+    display(
+        history.select("version", "timestamp", "operation")
+               .orderBy("version", ascending=False)
+               .limit(3)
+    )
