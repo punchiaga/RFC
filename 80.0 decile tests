@@ -83,3 +83,46 @@ Top-decile review rate: 8.8734%
 Top-decile lift: 2.95x
 
 Prototype top-decile lift: 2.55x
+
+# Step 54: Full-validation Top-K targeting metrics
+
+import numpy as np
+import pandas as pd
+
+ranked = rfc_full_validation_scores.sort_values(
+    "score", ascending=False
+).reset_index(drop=True)
+
+total_reviewers = int(ranked["actual"].sum())
+baseline_rate = ranked["actual"].mean()
+
+results = []
+
+for pct in [1, 5, 10, 20]:
+
+    k = int(np.ceil(len(ranked) * pct / 100))
+
+    selected = ranked.iloc[:k]
+    tp = int(selected["actual"].sum())
+
+    precision = tp / k
+    recall = tp / total_reviewers
+
+    f1 = (
+        2 * precision * recall / (precision + recall)
+        if precision + recall > 0 else 0
+    )
+
+    results.append({
+        "Top %": pct,
+        "Observations": k,
+        "Reviewers": tp,
+        "Precision": precision,
+        "Recall": recall,
+        "F1-score": f1,
+        "Lift": precision / baseline_rate
+    })
+
+rfc_full_topk_results = pd.DataFrame(results)
+
+display(rfc_full_topk_results)
