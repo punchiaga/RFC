@@ -120,3 +120,84 @@ print(
     ),
     "GB"
 )
+
+# Step 46B: Collect full RFC training data in bounded batches
+
+import gc
+import numpy as np
+import pandas as pd
+
+rfc_train_batches = []
+
+# Reuse the successfully collected first batch
+rfc_batch_0_pd[rfc_numeric_pipeline_columns] = (
+    rfc_batch_0_pd[rfc_numeric_pipeline_columns]
+    .astype(np.float32)
+)
+
+rfc_train_batches.append(rfc_batch_0_pd)
+
+print(f"Batch 0: {len(rfc_batch_0_pd):,} rows")
+
+# Collect remaining batches
+for batch_id in range(1, RFC_COLLECTION_BATCHES):
+
+    batch_df = (
+        prepare_rfc_features(
+            rfc_train_batched_df.filter(
+                F.col("_collection_batch") == batch_id
+            )
+        )
+        .select(*RFC_ACTIVE_FEATURE_COLUMNS, "target")
+    )
+
+    batch_pd = batch_df.toPandas()
+
+    batch_pd[rfc_numeric_pipeline_columns] = (
+        batch_pd[rfc_numeric_pipeline_columns]
+        .astype(np.float32)
+    )
+
+    rfc_train_batches.append(batch_pd)
+
+    print(
+        f"Batch {batch_id}: {len(batch_pd):,} rows | "
+        f"{batch_pd.memory_usage(deep=True).sum() / 1024**3:.2f} GB"
+    )
+
+    del batch_pd
+    gc.collect()
+
+# Combine batches into one pandas DataFrame
+rfc_full_train_pd = pd.concat(
+    rfc_train_batches,
+    ignore_index=True
+)
+
+# Release individual batch references
+del rfc_train_batches
+del rfc_batch_0_pd
+gc.collect()
+
+# Separate model features and target
+X_train_full = rfc_full_train_pd[RFC_ACTIVE_FEATURE_COLUMNS].copy()
+y_train_full = rfc_full_train_pd["target"].astype(np.int8).copy()
+
+# Validate row counts and class distribution
+assert len(X_train_full) == 1_434_220
+assert int(y_train_full.sum()) == 565_589
+assert int((y_train_full == 0).sum()) == 868_631
+
+print("\nFULL RFC TRAINING DATA READY")
+print("----------------------------")
+print("X_train_full shape:", X_train_full.shape)
+print("y_train_full shape:", y_train_full.shape)
+
+print(
+    "Feature memory:",
+    f"{X_train_full.memory_usage(deep=True).sum() / 1024**3:.2f} GB"
+)
+
+# Release combined intermediate DataFrame
+del rfc_full_train_pd
+gc.collect()
