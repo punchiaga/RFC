@@ -50,3 +50,72 @@ assert len(preprocessor.get_feature_names_out()) == len(
 )
 
 print("\nPASS: Saved RFC model and feature importance restored.")
+
+
+import pandas as pd
+import numpy as np
+
+# Fitted components from the restored MLflow model
+preprocessor = rfc_loaded_model.named_steps["preprocessor"]
+classifier = rfc_loaded_model.named_steps["classifier"]
+
+# Original feature groups saved inside the fitted preprocessor
+categorical_cols = list(preprocessor.transformers_[0][2])
+numeric_cols = list(preprocessor.transformers_[1][2])
+
+# XGBoost total gain, aligned to transformed feature positions
+booster = classifier.get_booster()
+gain_map = booster.get_score(importance_type="total_gain")
+
+encoded_names = preprocessor.get_feature_names_out()
+
+# XGBoost uses f0, f1, ... when trained without feature names
+encoded_gain = np.array([
+    gain_map.get(f"f{i}", 0.0)
+    for i in range(len(encoded_names))
+])
+
+# Map transformed features to original business features
+ohe = preprocessor.named_transformers_["categorical"]
+category_counts = [len(cats) for cats in ohe.categories_]
+
+original_features = []
+
+for col, count in zip(categorical_cols, category_counts):
+    original_features.extend([col] * count)
+
+original_features.extend(numeric_cols)
+
+assert len(original_features) == len(encoded_gain), (
+    "Feature mapping does not match XGBoost input dimensions."
+)
+
+rfc_feature_importance = (
+    pd.DataFrame({
+        "Feature": original_features,
+        "Total_Gain": encoded_gain
+    })
+    .groupby("Feature", as_index=False)["Total_Gain"]
+    .sum()
+    .sort_values("Total_Gain", ascending=False)
+    .reset_index(drop=True)
+)
+
+rfc_feature_importance["Rank"] = (
+    np.arange(1, len(rfc_feature_importance) + 1)
+)
+
+rfc_feature_importance["Importance_Pct"] = (
+    100 * rfc_feature_importance["Total_Gain"]
+    / rfc_feature_importance["Total_Gain"].sum()
+)
+
+rfc_top100_features = rfc_feature_importance.head(100)[
+    ["Rank", "Feature", "Total_Gain", "Importance_Pct"]
+]
+
+display(rfc_top100_features)
+
+print("Original features ranked:", len(rfc_feature_importance))
+print("Top 100 features extracted:", len(rfc_top100_features))
+
