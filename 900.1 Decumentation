@@ -46,3 +46,57 @@ Key takeaway for your team lead:
 We corrected the probability distortion introduced by training downsampling, bringing predicted probabilities much closer to actual customer review rates while preserving the model's ability to rank customers.
 
 Important: Overall calibration improved substantially, although some differences remain across risk segments.
+
+Machan, **7.85% precision is not particularly strong on its own, but it's meaningfully better than random targeting for our RFC model.**
+
+The important point is that the actual cover-review rate is only **3.18%**, so we must evaluate precision relative to that baseline.
+
+## **How good is 7.85% precision?**
+
+RFC test performance comparison
+
+Random baseline
+
+# **3.18%**
+
+Precision @ raw 0.5
+
+# **7.85%**
+
+Relative lift
+
+# **2.47×**
+
+Population review rate
+
+3.18%
+
+Precision at raw 0.5
+
+7.85%
+
+That means approximately **8 out of every 100 policies predicted positive** actually reviewed their cover within 90 days, compared with about 3 out of 100 selected randomly.
+
+However, the raw 0.5 threshold flags roughly 14.8% of the test population, so it isn't necessarily an appropriate targeting rule.
+
+## **Our top-K results are more compelling**
+
+| Targeted population | Precision  | Lift      |
+| ------------------- | ---------- | --------- |
+| Random selection    | 3.18%      | 1.00×     |
+| Raw threshold 0.5   | 7.85%      | 2.47×     |
+| Top 10%             | 8.91%      | 2.81×     |
+| **Top 5%**          | **11.00%** | **3.46×** |
+| Top 1%              | 16.27%     | 5.13×     |
+
+This demonstrates that the model concentrates higher-propensity policies toward the top of its ranking.
+
+### **My recommendation for your team lead**
+
+Don't present 7.85% as the headline result. Instead, say:
+
+> Our baseline model achieves approximately 11% precision when targeting the highest-ranked 5% of policies, compared with a population review rate of 3.18%. This represents a 3.46-fold improvement over random targeting.
+
+**One important qualification:** Whether 11% precision is commercially sufficient depends on engagement cost, campaign capacity and the value of a cover review. We haven't established that business threshold yet.
+
+So, machan, **the model demonstrates useful ranking performance, but we haven't yet proven that its precision is sufficient for deployment.**
