@@ -1,0 +1,10 @@
+I suggest covering five points
+1. Objective: Predict which policyholders are likely to review their health insurance cover within the next 90 days.
+
+2. Data and modelling: Established reproducible policy-level train/validation/test splits, trained an XGBoost baseline using 689 selected features, and evaluated it on approximately 2.2 million test observations.
+
+3. Key results: Achieved 3.46× lift in the top 5% and 2.81× lift in the top 10%, compared with random targeting. Test ROC-AUC was 0.704 and PR-AUC was 0.081.
+
+4. Technical milestones: Logged the model and evaluation metrics in MLflow, verified exact prediction reproducibility, and implemented the correction for negative-class sampling.
+
+5. Next steps: Controlled hyperparameter optimisation, reproducibility safeguards and integration into the existing Databricks Asset Bundles deployment framework.
