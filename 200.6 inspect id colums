@@ -1,0 +1,33 @@
+# Inspect ID-like features in the fitted model
+
+preprocessor = rfc_loaded_model.named_steps["preprocessor"]
+classifier = rfc_loaded_model.named_steps["classifier"]
+
+trained_numeric = list(
+    preprocessor.transformers_[1][2]
+)
+trained_categorical = list(
+    preprocessor.transformers_[0][2]
+)
+
+id_like_features = sorted(
+    col
+    for col in trained_numeric + trained_categorical
+    if "id" in col.lower()
+    or "identifier" in col.lower()
+)
+
+print("ID-like features in trained model:")
+for col in id_like_features:
+    feature_type = (
+        "NUMERIC" if col in trained_numeric
+        else "CATEGORICAL"
+    )
+    print(f"{feature_type:12} {col}")
+
+print("\nAncillary product ID included:",
+      "ancillary_product_id" in
+      trained_numeric + trained_categorical)
+
+print("\nXGBoost feature-name sample:")
+print(classifier.get_booster().feature_names[:10])
