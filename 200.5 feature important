@@ -16,3 +16,37 @@ print("Total importance:", importance_values.sum())
 assert len(encoded_feature_names) == len(importance_values)
 
 print("\nPASS: Feature importance is available.")
+
+
+# Restore RFC model after Databricks session restart
+
+import mlflow
+import mlflow.sklearn
+
+# Verified MLflow model ID from our previous session
+rfc_logged_model_id = "m-e98ba95bf7a1491f82bb273bf0320bd5"
+rfc_logged_model_uri = f"models:/{rfc_logged_model_id}"
+
+# Load the existing trained model — no retraining
+rfc_loaded_model = mlflow.sklearn.load_model(
+    rfc_logged_model_uri
+)
+
+# Recover fitted model components
+preprocessor = rfc_loaded_model.named_steps["preprocessor"]
+classifier = rfc_loaded_model.named_steps["classifier"]
+
+print("RFC MODEL RESTORED")
+print("------------------")
+print("Model URI:", rfc_logged_model_uri)
+print("Model type:", type(rfc_loaded_model).__name__)
+print("Preprocessor:", type(preprocessor).__name__)
+print("Classifier:", type(classifier).__name__)
+print("Encoded features:", len(preprocessor.get_feature_names_out()))
+print("Importance values:", len(classifier.feature_importances_))
+
+assert len(preprocessor.get_feature_names_out()) == len(
+    classifier.feature_importances_
+)
+
+print("\nPASS: Saved RFC model and feature importance restored.")
