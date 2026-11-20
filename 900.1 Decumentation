@@ -32,3 +32,17 @@ One-line takeaway
 “We built a reproducible, policy-level sampling framework that prevents cross-split policy leakage, reduces training cost and preserves unbiased validation and test populations.”
 
 One nuance for technical questions: validation and test are representative of the original population with respect to sampling, but they are not time-based holdouts. An out-of-time validation would be a separate future check.
+
+RFC Model Calibration — 3 key points
+1. Why calibration was needed: We retained all positive cases but sampled only 5% of negatives for training. This inflated the model's predicted probabilities relative to the actual population.
+
+2. What we did: Applied a mathematical prior-probability correction using the known 5% negative sampling rate, without retraining the model.
+
+3. How we validated it: On the independent test dataset:
+- Average predicted probability reduced from 35.71% to 3.05%, close to the actual review rate of 3.18%.
+- Brier score improved from 0.1479 to 0.0301 (lower is better).
+- Ranking performance and top-K lift remained unchanged.
+Key takeaway for your team lead:
+We corrected the probability distortion introduced by training downsampling, bringing predicted probabilities much closer to actual customer review rates while preserving the model's ability to rank customers.
+
+Important: Overall calibration improved substantially, although some differences remain across risk segments.
