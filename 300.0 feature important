@@ -1,0 +1,18 @@
+# Step 76: Check fitted XGBoost feature importance
+
+preprocessor = rfc_loaded_model.named_steps["preprocessor"]
+classifier = rfc_loaded_model.named_steps["classifier"]
+
+encoded_feature_names = preprocessor.get_feature_names_out()
+importance_values = classifier.feature_importances_
+
+print("RFC FEATURE IMPORTANCE CHECK")
+print("----------------------------")
+print("Encoded features:", len(encoded_feature_names))
+print("Importance values:", len(importance_values))
+print("Importance method:", classifier.importance_type)
+print("Total importance:", importance_values.sum())
+
+assert len(encoded_feature_names) == len(importance_values)
+
+print("\nPASS: Feature importance is available.")
