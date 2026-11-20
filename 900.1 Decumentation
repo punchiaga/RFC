@@ -8,3 +8,27 @@ I suggest covering five points
 4. Technical milestones: Logged the model and evaluation metrics in MLflow, verified exact prediction reproducibility, and implemented the correction for negative-class sampling.
 
 5. Next steps: Controlled hyperparameter optimisation, reproducibility safeguards and integration into the existing Databricks Asset Bundles deployment framework.
+
+Deterministic sampling — what we did
+We used deterministic, policy-level sampling to make our model development reproducible and prevent data leakage between training, validation and test datasets.
+
+Each policy was assigned to one of 10,000 buckets using a consistent hash-based approach. We allocated 81% to training, 9% to validation and 10% to testing.
+
+This ensures that all historical snapshots of the same policy remain in the same dataset, rather than appearing across training and testing.
+
+To reduce training cost, we retained all positive cases and sampled 5% of negative cases. Validation and test datasets remained untouched at their natural class distribution.
+
+How we validated it
+Check	Result
+Policy-level separation	Confirmed no policy overlap between splits
+Train / validation / test allocation	81% / 9% / 10%
+Training negative sampling	5%, with all positives retained
+Validation and test	Full datasets, no class downsampling
+Independent holdout evaluation	2.22 million test observations
+Model consistency	Validation and test performance closely aligned
+
+Important distinction: Deterministic sampling guarantees repeatable assignments for the same inputs and hashing logic. It does not guarantee identical model results if the underlying source data changes.
+One-line takeaway
+“We built a reproducible, policy-level sampling framework that prevents cross-split policy leakage, reduces training cost and preserves unbiased validation and test populations.”
+
+One nuance for technical questions: validation and test are representative of the original population with respect to sampling, but they are not time-based holdouts. An out-of-time validation would be a separate future check.
