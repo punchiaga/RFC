@@ -1,0 +1,11 @@
+We can potentially derive:
+
+has_child_under_1yr = 1 if child_age_min < 1
+
+But if child_age_min stores completed integer years, this identifies children currently aged zero—not necessarily those born within the exact preceding 365 days.
+
+2. Non-contributor turning 30 within a year
+
+We can potentially derive:
+
+has_non_contributor_aged_29 = 1 if without_contributor_adult_age_min <= 29 <= without_contributor_adult_age_max
