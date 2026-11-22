@@ -1,0 +1,10 @@
+RFC validation results with test_3_NS
+----------------------
+Observations: 10,176
+Positive rate: 3.4788%
+ROC-AUC:       0.6853
+PR-AUC (AP):   0.0856
+PR baseline:   0.0348
+
+Predicted probability range:
+Min: 0.0680, Mean: 0.3620, Max: 0.9275
