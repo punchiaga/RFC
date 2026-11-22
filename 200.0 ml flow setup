@@ -151,3 +151,28 @@ training_roc_curve.png
 MLFLOW LOGGED MODELS
 -------------------
 Logged-model lookup unavailable: INVALID_PARAMETER_VALUE: Could not parse search logged models filter: `source_run_id = '8a12f0170d494479a33772f48f7e1d9b'`, Invalid attribute column 'source_run_id' for filter_string. Attribute table columns may not need a prefix, but a valid attribute column must be presented. All valid attribute c
+
+
+import mlflow
+
+run_id = "8a12f0170d494479a33772f48f7e1d9b"
+
+client = mlflow.tracking.MlflowClient()
+
+models = client.search_logged_models(
+    experiment_ids=["1100835868419499"]
+)
+
+matching_models = [
+    model for model in models
+    if any(
+        source.run_id == run_id
+        for source in (model.model_id_sources or [])
+    )
+]
+
+print("Models associated with run:", len(matching_models))
+
+for model in matching_models:
+    print("Model ID:", model.model_id)
+    print("Name:", model.name)
