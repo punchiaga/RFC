@@ -63,3 +63,7 @@ print("Full validation observations:", len(df))
 print("Actual reviewers:", int(y.sum()))
 
 display(rfc_full_validation_metrics.round(6))
+print("Columns:", rfc_full_validation_scores.columns.tolist())
+print("Rows:", len(rfc_full_validation_scores))
+
+display(rfc_full_validation_scores.head(3))
