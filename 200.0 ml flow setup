@@ -140,3 +140,14 @@ Run name: gentle-lamb-487
 Experiment ID: 1100835868419499
 Status: FINISHED
 Artifact URI: dbfs:/databricks/mlflow-tracking/1100835868419499/8a12f0170d494479a33772f48f7e1d9b/artifacts
+
+RFC BASELINE Test 3 NS — MLFLOW ARTIFACT INSPECTION
+-------------------------------------------
+estimator.html
+training_confusion_matrix.png
+training_precision_recall_curve.png
+training_roc_curve.png
+
+MLFLOW LOGGED MODELS
+-------------------
+Logged-model lookup unavailable: INVALID_PARAMETER_VALUE: Could not parse search logged models filter: `source_run_id = '8a12f0170d494479a33772f48f7e1d9b'`, Invalid attribute column 'source_run_id' for filter_string. Attribute table columns may not need a prefix, but a valid attribute column must be presented. All valid attribute c
