@@ -131,3 +131,12 @@ print("RFC BASELINE V1 — MLFLOW METRICS LOGGED")
 print("---------------------------------------")
 print("Run ID:", rfc_run_id)
 print("Metrics logged:", len(rfc_metrics))
+
+test_3_NS
+RFC FULL MODEL — MLFLOW RUN
+---------------------------
+Run ID: 8a12f0170d494479a33772f48f7e1d9b
+Run name: gentle-lamb-487
+Experiment ID: 1100835868419499
+Status: FINISHED
+Artifact URI: dbfs:/databricks/mlflow-tracking/1100835868419499/8a12f0170d494479a33772f48f7e1d9b/artifacts
