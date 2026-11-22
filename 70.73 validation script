@@ -71,3 +71,60 @@ actual	score	corrected_score
 0	0.5760250687599182	0.06361035257577896
 0	0.1768026500940323	0.010624680668115616
 0	0.5263187289237976	0.0526321679353714
+
+
+import numpy as np
+import pandas as pd
+
+from sklearn.metrics import (
+    roc_auc_score,
+    average_precision_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    brier_score_loss,
+    log_loss
+)
+
+df = rfc_full_validation_scores
+
+assert len(df) == 1_998_344, "Unexpected validation row count"
+
+y = df["actual"].to_numpy(dtype=int)
+p_raw = df["score"].to_numpy(dtype=float)
+p_corrected = df["corrected_score"].to_numpy(dtype=float)
+
+assert np.isfinite(p_raw).all()
+assert np.isfinite(p_corrected).all()
+assert np.isin(y, [0, 1]).all()
+
+predicted = (p_raw >= 0.5).astype(int)
+
+def calculate_lift(y_true, scores, pct):
+    n_top = int(np.ceil(len(y_true) * pct / 100))
+    top_indices = np.argsort(-scores, kind="stable")[:n_top]
+    return y_true[top_indices].mean() / y_true.mean()
+
+validation_metrics = {
+    "ROC-AUC": roc_auc_score(y, p_raw),
+    "PR-AUC": average_precision_score(y, p_raw),
+    "Precision @ raw 0.5": precision_score(y, predicted, zero_division=0),
+    "Recall @ raw 0.5": recall_score(y, predicted, zero_division=0),
+    "F1 @ raw 0.5": f1_score(y, predicted, zero_division=0),
+    "Lift @ Top 1%": calculate_lift(y, p_raw, 1),
+    "Lift @ Top 5%": calculate_lift(y, p_raw, 5),
+    "Lift @ Top 10%": calculate_lift(y, p_raw, 10),
+    "Lift @ Top 20%": calculate_lift(y, p_raw, 20),
+    "Corrected Brier": brier_score_loss(y, p_corrected),
+    "Corrected Log Loss": log_loss(y, p_corrected, labels=[0, 1])
+}
+
+rfc_full_validation_metrics = pd.DataFrame({
+    "Metric": list(validation_metrics.keys()),
+    "Validation": list(validation_metrics.values())
+})
+
+print("Full validation rows:", len(df))
+print("Actual reviewers:", int(y.sum()))
+
+display(rfc_full_validation_metrics.round(6))
