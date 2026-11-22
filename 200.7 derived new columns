@@ -108,3 +108,9 @@ policy_pharmacy_product_id
     "policy_future_org_from_date",
     "policy_future_org_to_date",
 }
+
+Excluded product IDs: ['policy_national_pharmacy_product_id', 'policy_pharmacy_product_id']
+Numeric features: 676
+Categorical features: 21
+Total active features: 697
+Training shape: (10137, 697)
