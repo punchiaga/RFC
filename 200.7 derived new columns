@@ -39,3 +39,11 @@ object     187
 int64      134
 int32        9
 dtype: int64
+
+Total object columns: 187
+Expected categorical columns: 21
+Unexpected object columns: 166
+
+Unexpected object column types:
+Decimal: 164
+all_null: 2
