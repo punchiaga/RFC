@@ -140,3 +140,53 @@ Lift @ Top 10%	2.805777
 Lift @ Top 20%	2.229179
 Corrected Brier	0.029829
 Corrected Log Loss	0.131293
+
+
+# Step 63: RFC baseline — full validation vs full test
+
+rfc_final_comparison = pd.DataFrame({
+    "Metric": [
+        "ROC-AUC",
+        "PR-AUC",
+        "Precision @ raw 0.5",
+        "Recall @ raw 0.5",
+        "F1 @ raw 0.5",
+        "Lift @ Top 1%",
+        "Lift @ Top 5%",
+        "Lift @ Top 10%",
+        "Lift @ Top 20%",
+        "Corrected Brier",
+        "Corrected Log Loss"
+    ],
+    "Test": [
+        test_roc_auc,
+        test_pr_auc,
+        test_precision,
+        test_recall,
+        test_f1,
+        *rfc_test_topk_results["Lift"].to_list(),
+        test_brier_corrected,
+        test_logloss_corrected
+    ]
+})
+
+# Match validation metrics by name, not row position
+rfc_final_comparison = rfc_final_comparison.merge(
+    rfc_full_validation_metrics,
+    on="Metric",
+    how="left",
+    validate="one_to_one"
+)
+
+assert rfc_final_comparison["Validation"].notna().all()
+
+rfc_final_comparison["Difference"] = (
+    rfc_final_comparison["Test"]
+    - rfc_final_comparison["Validation"]
+)
+
+rfc_final_comparison = rfc_final_comparison[
+    ["Metric", "Validation", "Test", "Difference"]
+]
+
+display(rfc_final_comparison.round(6))
