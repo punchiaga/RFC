@@ -67,3 +67,7 @@ print("Columns:", rfc_full_validation_scores.columns.tolist())
 print("Rows:", len(rfc_full_validation_scores))
 
 display(rfc_full_validation_scores.head(3))
+actual	score	corrected_score
+0	0.5760250687599182	0.06361035257577896
+0	0.1768026500940323	0.010624680668115616
+0	0.5263187289237976	0.0526321679353714
