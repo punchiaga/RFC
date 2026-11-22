@@ -47,3 +47,14 @@ Unexpected object columns: 166
 Unexpected object column types:
 Decimal: 164
 all_null: 2
+
+Numeric columns: 678
+Categorical columns: 21
+Total features: 699
+
+Pandas data types:
+float64    526
+int64      136
+object      21
+int32       16
+dtype: int64
