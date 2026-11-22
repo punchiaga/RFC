@@ -18,3 +18,10 @@ active = set(rfc_numeric_pipeline_columns) | set(rfc_onehot_columns)
 
 print("Excluded columns still selected:", sorted(active & excluded))
 print("cash_rate_target retained:", "cash_rate_target" in active)
+
+Original shape: (10137, 692)
+Transformed shape: (10137, 840)
+Output format: Dense
+Transformed feature count: 840
+Infinite values: 0
+Missing values: 2577644
