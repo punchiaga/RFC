@@ -128,3 +128,15 @@ print("Full validation rows:", len(df))
 print("Actual reviewers:", int(y.sum()))
 
 display(rfc_full_validation_metrics.round(6))
+Metric	Validation
+ROC-AUC	0.704455
+PR-AUC	0.085515
+Precision @ raw 0.5	0.077997
+Recall @ raw 0.5	0.365003
+F1 @ raw 0.5	0.128529
+Lift @ Top 1%	5.462339
+Lift @ Top 5%	3.489165
+Lift @ Top 10%	2.805777
+Lift @ Top 20%	2.229179
+Corrected Brier	0.029829
+Corrected Log Loss	0.131293
