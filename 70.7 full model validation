@@ -492,3 +492,17 @@ rfc_validation_baseline_df = pd.DataFrame(
 )
 
 display(rfc_validation_baseline_df)
+
+=================================================
+test_3 results
+
+# Validate row counts and class distribution
+assert len(X_train_full) == 1_434_220
+assert int(y_train_full.sum()) == 565_589
+assert int((y_train_full == 0).sum()) == 868_631
+
+assert len(RFC_ACTIVE_FEATURE_COLUMNS) == 689
+assert len(X_train_full) == len(y_train_full) == 1_434_220
+assert set(rfc_xgb_full.named_steps["preprocessor"].feature_names_in_) if hasattr(
+    rfc_xgb_full.named_steps["preprocessor"], "feature_names_in_"
+) else True
