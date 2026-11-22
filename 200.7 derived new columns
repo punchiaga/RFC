@@ -9,3 +9,18 @@ But if child_age_min stores completed integer years, this identifies children cu
 We can potentially derive:
 
 has_non_contributor_aged_29 = 1 if without_contributor_adult_age_min <= 29 <= without_contributor_adult_age_max
+
+Training features: (10137, 699)
+Training target: (10137,)
+
+Target distribution:
+0    6144
+1    3993
+Name: target, dtype: int64
+
+Data types:
+float64    360
+object     187
+int64      136
+int32       16
+dtype: int64
