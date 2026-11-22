@@ -506,3 +506,40 @@ assert len(X_train_full) == len(y_train_full) == 1_434_220
 assert set(rfc_xgb_full.named_steps["preprocessor"].feature_names_in_) if hasattr(
     rfc_xgb_full.named_steps["preprocessor"], "feature_names_in_"
 ) else True
+
+# Validate test_3_NS training data
+
+# 1. Validate row counts
+assert len(X_train_full) == len(y_train_full), \
+    "Training features and target row counts do not match"
+
+# 2. Validate target distribution
+positive_count = int((y_train_full == 1).sum())
+negative_count = int((y_train_full == 0).sum())
+
+assert positive_count + negative_count == len(y_train_full), \
+    "Unexpected target values found"
+
+assert positive_count > 0, "No positive training examples"
+assert negative_count > 0, "No negative training examples"
+
+# 3. Validate approved feature count
+assert len(RFC_ACTIVE_FEATURE_COLUMNS) == 691, \
+    "Unexpected RFC feature count"
+
+assert X_train_full.shape[1] == 691, \
+    "Training feature count does not match approved contract"
+
+# 4. Validate exact model feature contract
+model_preprocessor = rfc_xgb_full.named_steps["preprocessor"]
+
+if hasattr(model_preprocessor, "feature_names_in_"):
+    assert list(model_preprocessor.feature_names_in_) == list(X_train_full.columns), \
+        "Model preprocessing feature contract mismatch"
+
+# 5. Display results
+print("test_3_NS training validation PASSED")
+print("Training rows:", len(X_train_full))
+print("Positive rows:", positive_count)
+print("Negative rows:", negative_count)
+print("Active features:", len(RFC_ACTIVE_FEATURE_COLUMNS))
