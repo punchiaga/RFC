@@ -2,3 +2,19 @@ RFC preprocessing pipeline created.
 Categorical columns: 21
 Numeric columns: 671
 Total input features: 692
+
+
+excluded = {
+    "policy_ancillary_product_id",
+    "policy_extras_product_id",
+    "policy_hospital_product_id",
+    "policy_national_pharmacy_product_id",
+    "policy_pharmacy_product_id",
+    "policy_future_org_from_date",
+    "policy_future_org_to_date",
+}
+
+active = set(rfc_numeric_pipeline_columns) | set(rfc_onehot_columns)
+
+print("Excluded columns still selected:", sorted(active & excluded))
+print("cash_rate_target retained:", "cash_rate_target" in active)
