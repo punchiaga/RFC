@@ -102,3 +102,82 @@ print("Full validation rows:", rfc_validation_df.count())
 print("Validation columns:", len(rfc_validation_df.columns))
 Full validation rows: 1998344
 Validation columns: 756
+
+# Step 61: Score full RFC test population in batches
+
+import gc
+import numpy as np
+import pandas as pd
+from pyspark.sql import functions as F
+
+rfc_test_predictions = []
+
+negative_sampling_rate = (
+    RFC_DATA_CONFIG["negative_sample_pct"] / 100.0
+)
+
+for batch_id in range(RFC_TEST_BATCHES):
+
+    batch_spark_df = rfc_test_batched_df.filter(
+        F.col("_test_batch") == batch_id
+    )
+
+    batch_prepared_df = (
+        prepare_rfc_features(batch_spark_df)
+        .select(*RFC_ACTIVE_FEATURE_COLUMNS, "target")
+    )
+
+    batch_pd = batch_prepared_df.toPandas()
+
+    batch_pd[rfc_numeric_pipeline_columns] = (
+        batch_pd[rfc_numeric_pipeline_columns]
+        .astype(np.float32)
+    )
+
+    raw_scores = rfc_xgb_full.predict_proba(
+        batch_pd[RFC_ACTIVE_FEATURE_COLUMNS]
+    )[:, 1]
+
+    corrected_scores_batch = (
+        negative_sampling_rate * raw_scores
+        / (
+            (1.0 - raw_scores)
+            + negative_sampling_rate * raw_scores
+        )
+    )
+
+    rfc_test_predictions.append(
+        pd.DataFrame({
+            "actual": batch_pd["target"].to_numpy(dtype=np.int8),
+            "raw_score": raw_scores,
+            "corrected_score": corrected_scores_batch
+        })
+    )
+
+    print(
+        f"Batch {batch_id + 1}/{RFC_TEST_BATCHES}: "
+        f"{len(batch_pd):,} observations scored"
+    )
+
+    del batch_pd, batch_prepared_df, batch_spark_df
+    del raw_scores, corrected_scores_batch
+    gc.collect()
+
+rfc_full_test_scores = pd.concat(
+    rfc_test_predictions,
+    ignore_index=True
+)
+
+del rfc_test_predictions
+gc.collect()
+
+assert len(rfc_full_test_scores) == 2_216_521
+assert int(rfc_full_test_scores["actual"].sum()) == 70_375
+
+print("\nRFC FULL TEST SCORING COMPLETE")
+print("--------------------------------")
+print(f"Observations: {len(rfc_full_test_scores):,}")
+print(f"Actual reviewers: {int(rfc_full_test_scores['actual'].sum()):,}")
+print(f"Mean raw score: {rfc_full_test_scores['raw_score'].mean():.4%}")
+print(f"Mean corrected score: {rfc_full_test_scores['corrected_score'].mean():.4%}")
+print(f"Actual review rate: {rfc_full_test_scores['actual'].mean():.4%}")
