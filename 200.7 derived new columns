@@ -98,3 +98,13 @@ policy_hospital_product_id
 policy_is_future_dd_payment
 policy_national_pharmacy_product_id
 policy_pharmacy_product_id
+
+{
+    "policy_ancillary_product_id",
+    "policy_extras_product_id",
+    "policy_hospital_product_id",
+    "policy_national_pharmacy_product_id",
+    "policy_pharmacy_product_id",
+    "policy_future_org_from_date",
+    "policy_future_org_to_date",
+}
