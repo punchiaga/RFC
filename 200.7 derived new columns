@@ -63,9 +63,9 @@ features = sorted(
     set(rfc_numeric_pipeline_columns + rfc_onehot_columns)
 )
 
-# Flag potential identifiers, future information and target leakage
-flagged = [
-    c for c in features
+# Replace X_train with your actual training feature DataFrame name
+flagged = sorted(
+    c for c in X_train.columns
     if (
         "future" in c.lower()
         or "target" in c.lower()
@@ -78,9 +78,10 @@ flagged = [
             "days_from_snapshot_to_first_event"
         }
     )
-]
+)
 
-print("Total selected features:", len(features))
-print("\nPotentially excluded features:")
+print("Total features:", len(X_train.columns))
+print("Potentially excluded features:", len(flagged))
+
 for c in flagged:
     print(c)
