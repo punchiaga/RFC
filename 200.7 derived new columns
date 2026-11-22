@@ -114,3 +114,16 @@ Numeric features: 676
 Categorical features: 21
 Total active features: 697
 Training shape: (10137, 697)
+
+remaining = [
+    c for c in [
+        "policy_ancillary_product_id",
+        "policy_extras_product_id",
+        "policy_hospital_product_id",
+        "policy_future_org_from_date",
+        "policy_future_org_to_date",
+    ]
+    if c in X_train.columns
+]
+
+print("Remaining unwanted features:", remaining)
