@@ -98,3 +98,5 @@ Corrected Brier	0.032929	0.030091	-0.002838
 Corrected Log Loss	0.143282	0.132261	-0.011021
 
 print("Full validation DataFrame available:", "rfc_validation_df" in globals())
+print("Full validation rows:", rfc_validation_df.count())
+print("Validation columns:", len(rfc_validation_df.columns))
