@@ -176,3 +176,27 @@ print("Models associated with run:", len(matching_models))
 for model in matching_models:
     print("Model ID:", model.model_id)
     print("Name:", model.name)
+
+# Step 67A: Find the saved model using our existing MLflow run
+import mlflow
+
+run_id = "8a12f0170d494479a33772f48f7e1d9b"
+
+client = mlflow.tracking.MlflowClient()
+
+models = client.search_logged_models(
+    experiment_ids=["1100835868419499"]
+)
+
+matching_models = [
+    model for model in models
+    if model.source_run_id == run_id
+]
+
+print("Models associated with run:", len(matching_models))
+
+for model in matching_models:
+    print("Model ID:", model.model_id)
+    print("Name:", model.name)
+    print("Model URI:", model.model_uri)
+    print("Status:", model.status)
