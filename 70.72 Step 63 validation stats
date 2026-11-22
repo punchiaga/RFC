@@ -1,0 +1,72 @@
+# Step 62A: test_3_NS — validation statistics for Step 63
+
+import numpy as np
+import pandas as pd
+
+from sklearn.metrics import (
+    roc_auc_score,
+    average_precision_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    brier_score_loss,
+    log_loss
+)
+
+# Use the current test_3_NS validation predictions
+y = np.asarray(y_valid).ravel().astype(int)
+p = np.asarray(rfc_valid_probabilities).ravel().astype(float)
+
+assert len(y) == len(p), "Validation labels and predictions do not match"
+assert set(np.unique(y)) == {0, 1}, "Validation must contain both classes"
+assert np.isfinite(p).all(), "Invalid validation probabilities"
+assert ((p >= 0) & (p <= 1)).all(), "Probabilities outside [0, 1]"
+
+# Raw 0.5 threshold — same definition as previous baseline
+pred = (p >= 0.5).astype(int)
+
+# Prior correction for 5% negative sampling
+negative_sample_fraction = 0.05
+
+p_corrected = (
+    negative_sample_fraction * p
+    / (1 - p + negative_sample_fraction * p)
+)
+
+# Top-K lift using raw probabilities
+# Ranking is unchanged by prior correction.
+order = np.argsort(-p, kind="stable")
+n = len(y)
+prevalence = y.mean()
+
+lift_by_k = {}
+
+for pct in [1, 5, 10, 20]:
+    k = max(1, int(np.ceil(n * pct / 100)))
+    precision_at_k = y[order[:k]].mean()
+    lift_by_k[pct] = precision_at_k / prevalence
+
+# Assemble the 11 validation metrics
+rfc_validation_step63 = pd.Series({
+    "ROC-AUC": roc_auc_score(y, p),
+    "PR-AUC": average_precision_score(y, p),
+    "Precision @ raw 0.5": precision_score(y, pred, zero_division=0),
+    "Recall @ raw 0.5": recall_score(y, pred, zero_division=0),
+    "F1 @ raw 0.5": f1_score(y, pred, zero_division=0),
+    "Lift @ Top 1%": lift_by_k[1],
+    "Lift @ Top 5%": lift_by_k[5],
+    "Lift @ Top 10%": lift_by_k[10],
+    "Lift @ Top 20%": lift_by_k[20],
+    "Corrected Brier": brier_score_loss(y, p_corrected),
+    "Corrected Log Loss": log_loss(y, p_corrected),
+})
+
+print("Validation observations:", n)
+print("Validation prevalence:", round(prevalence, 6))
+
+display(
+    rfc_validation_step63
+    .rename("Validation")
+    .to_frame()
+    .round(6)
+)
