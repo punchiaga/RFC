@@ -96,3 +96,5 @@ Lift @ Top 10%	2.767274	2.817765	0.050491
 Lift @ Top 20%	1.976624	2.235849	0.259225
 Corrected Brier	0.032929	0.030091	-0.002838
 Corrected Log Loss	0.143282	0.132261	-0.011021
+
+print("Full validation DataFrame available:", "rfc_validation_df" in globals())
