@@ -1,0 +1,21 @@
+ml-hi-customer-right-fit-cover/
+│
+├── databricks.yml
+│
+├── resources/
+│   └── jobs/
+│       ├── job-rfc-prepare.yml
+│       └── job-rfc-train.yml
+│
+├── src/
+│   ├── prep/
+│   │   └── prepare_rfc_dataset.py
+│   │
+│   └── train/
+│       ├── train_model_rfc.py
+│       └── rfc_training_functions.py
+│
+├── config/
+│   └── rfc_model.json
+│
+└── tests/
