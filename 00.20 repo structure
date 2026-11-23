@@ -19,3 +19,13 @@ ml-hi-customer-right-fit-cover/
 │   └── rfc_model.json
 │
 └── tests/
+
+
+File responsibilities
+File	Responsibility
+prepare_rfc_dataset.py	    Read source Delta table, deterministic policy split, negative sampling, write datasets
+train_model_rfc.py	        Read prepared datasets, fit preprocessing and XGBoost, evaluate on validation, log MLflow run
+rfc_training_functions.py	  Shared feature transformations, pandas conversion, pipeline construction, scoring and probability correction
+rfc_model.json	            Feature exclusions, dataset settings, model parameters and training configuration
+job-rfc-prepare.yml	        DAB job for dataset preparation
+job-rfc-train.yml	          DAB job for model training
