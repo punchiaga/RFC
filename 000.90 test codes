@@ -16,3 +16,10 @@
             random_state=RANDOM_SEED,
             n_jobs=8,
         )
+
+follow this boundary:
+Confirmed by your code/output: state it as fact.
+Technically possible alternative: label it explicitly as optional.
+Change to established logic: do not recommend it unless there is a demonstrated reason.
+Unknown: say it is unknown and validate it first.
+Senior-leadership explanation: no speculation presented as fact.
