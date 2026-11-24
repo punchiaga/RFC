@@ -90,6 +90,46 @@ if run_hpo:
         del classifier, validation_scores
         gc.collect()
         return float(trial_validation_metrics["PR-AUC"])
+if run_hpo:
+    mlflow.set_experiment(hpo_experiment_name)
+    hpo_parent_run_name = f"rfc_xgb_hpo_neg_{negative_sample_pct}pct"
+
+    with mlflow.start_run(run_name=hpo_parent_run_name) as hpo_parent_run:
+        mlflow.log_params({
+            "algorithm": "xgboost",
+            "source_table": source_table,
+            "negative_sample_pct": negative_sample_pct,
+            "positive_sample_pct": 100,
+            "trial_count_requested": hpo_trial_count,
+            "objective_metric": "validation_pr_auc",
+            "sampler": "TPESampler",
+            "random_seed": RANDOM_SEED,
+            "test_used_for_trial_selection": False,
+            "early_stopping_rounds": hpo_early_stopping_rounds,
+        })
+
+        hpo_study = optuna.create_study(
+            study_name=f"rfc_xgb_hpo_neg_{negative_sample_pct}pct",
+            direction="maximize",
+            sampler=optuna.samplers.TPESampler(seed=RANDOM_SEED),
+        )
+        hpo_study.optimize(
+            hpo_objective,
+            n_trials=hpo_trial_count,
+            timeout=(hpo_timeout_minutes * 60) or None,
+            gc_after_trial=True,
+            show_progress_bar=True,
+        )
+        hpo_parent_run_id = hpo_parent_run.info.run_id
+
+    assert len(hpo_study.trials) > 0
+    assert hpo_study.best_trial.state == optuna.trial.TrialState.COMPLETE
+    print("HPO parent run ID:", hpo_parent_run_id)
+    print("Best trial:", hpo_study.best_trial.number)
+    print("Best Validation PR-AUC:", hpo_study.best_value)
+    print("Best parameters:", hpo_study.best_params)
+
+
 
 follow this boundary:
 Confirmed by your code/output: state it as fact.
