@@ -1,3 +1,5 @@
+import optuna
+if run_hpo:
     def build_hpo_classifier(trial: optuna.Trial) -> XGBClassifier:
         return XGBClassifier(
             objective="binary:logistic",
@@ -16,6 +18,78 @@
             random_state=RANDOM_SEED,
             n_jobs=8,
         )
+
+
+    def hpo_objective(trial: optuna.Trial) -> float:
+        trial_start = time.time()
+        classifier = build_hpo_classifier(trial)
+
+        with mlflow.start_run(
+            run_name=f"trial_{trial.number:03d}",
+            nested=True,
+        ):
+            classifier.fit(
+                X_train_hpo,
+                y_train,
+                eval_set=[(X_validation_hpo, y_validation_hpo)],
+                verbose=False,
+            )
+
+            # train_scores = classifier.predict_proba(X_train_hpo)[:, 1]
+            validation_scores = classifier.predict_proba(X_validation_hpo)[:, 1]
+            # trial_train_metrics = evaluate_scores(
+            #     y_train,
+            #     train_scores,
+            #     negative_sampling_rate,
+            # )
+            trial_validation_metrics = evaluate_scores(
+                y_validation_hpo,
+                validation_scores,
+                negative_sampling_rate,
+            )
+            trial_minutes = (time.time() - trial_start) / 60
+            best_iteration = (
+                int(classifier.best_iteration)
+                if classifier.best_iteration is not None
+                else int(classifier.n_estimators - 1)
+            )
+
+            mlflow.log_params({
+                **trial.params,
+                "algorithm": "xgboost",
+                "negative_sample_pct": negative_sample_pct,
+                "positive_sample_pct": 100,
+                "objective_metric": "validation_pr_auc",
+                "early_stopping_rounds": hpo_early_stopping_rounds,
+                "random_seed": RANDOM_SEED,
+            })
+            mlflow.log_metrics({
+                # **{
+                #     metric_key("train", metric_name): float(metric_value)
+                #     for metric_name, metric_value in trial_train_metrics.items()
+                # },
+                **{
+                    metric_key("valid", metric_name): float(metric_value)
+                    for metric_name, metric_value in trial_validation_metrics.items()
+                },
+                "trial_minutes": trial_minutes,
+                "best_iteration": float(best_iteration),
+            })
+
+            trial.set_user_attr("best_iteration", best_iteration)
+            trial.set_user_attr("trial_minutes", trial_minutes)
+            trial.set_user_attr(
+                "validation_lift_top_05",
+                float(trial_validation_metrics["Lift @ Top 5%"]),
+            )
+            trial.set_user_attr(
+                "validation_corrected_brier",
+                float(trial_validation_metrics["Corrected Brier"]),
+            )
+
+        del classifier, validation_scores
+        gc.collect()
+        return float(trial_validation_metrics["PR-AUC"])
 
 follow this boundary:
 Confirmed by your code/output: state it as fact.
