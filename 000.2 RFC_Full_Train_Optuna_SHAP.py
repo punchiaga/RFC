@@ -324,3 +324,52 @@ if score_test:
     with mlflow.start_run(run_id=selected_run.info.run_id):
         mlflow.log_metrics(test_metrics)
     print("FINAL HOLDOUT TEST", test_metrics)
+
+
+# COMMAND ----------
+# MAGIC %md
+# MAGIC ## SHAP explainability — selected model only
+
+# COMMAND ----------
+import shap
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy import sparse
+
+SHAP_SAMPLE_SIZE = 1000
+SHAP_SEED = 42
+
+# Reproducible sample from the full validation matrix
+rng = np.random.default_rng(SHAP_SEED)
+sample_indices = rng.choice(
+    X_valid_enc.shape[0],
+    size=min(SHAP_SAMPLE_SIZE, X_valid_enc.shape[0]),
+    replace=False,
+)
+
+X_shap = X_valid_enc[sample_indices]
+
+# SHAP plotting can require a dense matrix.
+# Convert only the small explainability sample.
+if sparse.issparse(X_shap):
+    X_shap = X_shap.toarray()
+
+feature_names = preprocessor.get_feature_names_out()
+
+explainer = shap.TreeExplainer(selected_model)
+shap_values = explainer(X_shap)
+
+# 1. Global feature importance
+shap.plots.bar(shap_values, max_display=20, show=False)
+plt.tight_layout()
+plt.show()
+
+# 2. Feature impact and direction
+shap.plots.beeswarm(shap_values, max_display=20, show=False)
+plt.tight_layout()
+plt.show()
+
+# 3. Explain one validation observation
+shap.plots.waterfall(shap_values[0], max_display=15, show=False)
+plt.tight_layout()
+plt.show()
