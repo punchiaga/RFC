@@ -89,3 +89,10 @@ All six RFC Delta tables created successfully.
   train_sampled: bdp4_prod_ml_build.hi_customer_right_fit_cover_data.rfc_training_20261119034822_train_sampled
   validation_sampled: bdp4_prod_ml_build.hi_customer_right_fit_cover_data.rfc_training_20261119034822_validation_sampled
   test_sampled: bdp4_prod_ml_build.hi_customer_right_fit_cover_data.rfc_training_20261119034822_test_sampled
+
+
+print("Negative sampling percentage:", RFC_DATA_CONFIG.get("negative_sample_pct"))
+print("Bucket count:", bucket_count)
+print("Negative threshold:", negative_threshold)
+
+print("Training table:", RFC_OUTPUT_DATASETS["train_sampled"][1])
