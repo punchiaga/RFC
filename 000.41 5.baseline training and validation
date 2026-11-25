@@ -1,0 +1,371 @@
+
+# COMMAND ----------
+# MAGIC %md
+# MAGIC ## 5. Baseline training and validation
+# MAGIC Train XGBoost, evaluate on full validation population,
+# MAGIC and log reproducible artifacts to MLflow.
+# MAGIC HPO and test scoring are not performed here.
+
+# COMMAND ----------
+
+from mlflow.models import infer_signature
+
+baseline_model = None
+baseline_validation_metrics = None
+baseline_run_id = None
+rfc_feature_importance = None
+
+if run_baseline:
+
+    # --------------------------------------------------
+    # 5.1 Validate baseline configuration and data
+    # --------------------------------------------------
+    assert np.isclose(
+        negative_sampling_rate,
+        negative_sample_pct / 100.0
+    ), "Negative sampling configuration mismatch"
+
+    assert len(X_train) == len(y_train)
+    assert list(X_train.columns) == list(active_feature_columns)
+    assert set(np.unique(y_train)) == {0, 1}
+
+    train_positive_count = int(np.sum(np.asarray(y_train) == 1))
+    train_negative_count = int(np.sum(np.asarray(y_train) == 0))
+    train_row_count = len(y_train)
+
+    print("RFC BASELINE CONFIGURATION")
+    print("--------------------------")
+    print("Negative sampling %:", negative_sample_pct)
+    print("Training rows:", f"{train_row_count:,}")
+    print("Positive rows:", f"{train_positive_count:,}")
+    print("Negative rows:", f"{train_negative_count:,}")
+    print("Active features:", len(active_feature_columns))
+    print("Training source:", train_table)
+    print("Validation source:", validation_table)
+
+    # --------------------------------------------------
+    # 5.2 Initialize baseline model
+    # --------------------------------------------------
+    baseline_model = clone(model)
+
+    run_name = (
+        f"rfc_xgb_baseline_neg_{negative_sample_pct}pct"
+    )
+
+    with mlflow.start_run(run_name=run_name) as baseline_run:
+
+        baseline_run_id = baseline_run.info.run_id
+
+        # ----------------------------------------------
+        # 5.3 Log configuration and dataset metadata
+        # ----------------------------------------------
+        mlflow.log_params({
+            "algorithm": "xgboost",
+            "train_table": train_table,
+            "validation_table": validation_table,
+            "negative_sample_pct": negative_sample_pct,
+            "positive_sample_pct": 100,
+            "negative_sampling_rate": negative_sampling_rate,
+            "active_feature_count": len(active_feature_columns),
+            "random_seed": RANDOM_SEED,
+            "training_rows": train_row_count,
+            "training_positive_rows": train_positive_count,
+            "training_negative_rows": train_negative_count,
+            "probability_correction": "negative_sampling_prior",
+        })
+
+        mlflow.log_metrics({
+            "train_positive_rate": (
+                train_positive_count / train_row_count
+            ),
+            "train_negative_rate": (
+                train_negative_count / train_row_count
+            ),
+        })
+
+        # Save the original input feature contract
+        mlflow.log_dict(
+            {
+                "feature_columns": list(active_feature_columns),
+                "feature_count": len(active_feature_columns),
+                "negative_sample_pct": negative_sample_pct,
+            },
+            "metadata/feature_contract.json"
+        )
+
+        # Log actual classifier hyperparameters
+        classifier_params = (
+            baseline_model.named_steps["classifier"].get_params()
+        )
+
+        mlflow.log_dict(
+            classifier_params,
+            "metadata/xgboost_parameters.json"
+        )
+
+        # ----------------------------------------------
+        # 5.4 Train baseline XGBoost
+        # ----------------------------------------------
+        print("\nTraining baseline XGBoost...")
+
+        started = time.perf_counter()
+
+        baseline_model.fit(X_train, y_train)
+
+        training_minutes = (
+            time.perf_counter() - started
+        ) / 60.0
+
+        mlflow.log_metric(
+            "training_minutes",
+            training_minutes
+        )
+
+        print(
+            f"Training completed: {training_minutes:.2f} minutes"
+        )
+
+        # ----------------------------------------------
+        # 5.5 Evaluate full validation population
+        # ----------------------------------------------
+        print("\nScoring full validation population...")
+
+        validation_started = time.perf_counter()
+
+        y_baseline_valid, baseline_valid_scores = score_full_split(
+            sampled_validation_df,
+            "Baseline validation",
+            baseline_model
+        )
+
+        baseline_validation_metrics = evaluate_scores(
+            y_baseline_valid,
+            baseline_valid_scores,
+            negative_sampling_rate
+        )
+
+        validation_minutes = (
+            time.perf_counter() - validation_started
+        ) / 60.0
+
+        mlflow.log_metric(
+            "validation_scoring_minutes",
+            validation_minutes
+        )
+
+        mlflow.log_metric(
+            "validation_rows",
+            len(y_baseline_valid)
+        )
+
+        mlflow.log_metric(
+            "validation_positive_rate",
+            float(np.mean(y_baseline_valid))
+        )
+
+        mlflow.log_metrics({
+            metric_key("valid", metric_name): float(metric_value)
+            for metric_name, metric_value
+            in baseline_validation_metrics.items()
+        })
+
+        # ----------------------------------------------
+        # 5.6 Generate signature and input example
+        # ----------------------------------------------
+        input_example = X_train.head(5).copy()
+
+        example_predictions = baseline_model.predict_proba(
+            input_example
+        )
+
+        model_signature = infer_signature(
+            input_example,
+            example_predictions
+        )
+
+        # ----------------------------------------------
+        # 5.7 Calculate original-feature importance
+        # ----------------------------------------------
+        fitted_preprocessor = (
+            baseline_model.named_steps["preprocessor"]
+        )
+
+        fitted_classifier = (
+            baseline_model.named_steps["classifier"]
+        )
+
+        encoded_names = (
+            fitted_preprocessor.get_feature_names_out()
+        )
+
+        booster = fitted_classifier.get_booster()
+
+        gain_map = booster.get_score(
+            importance_type="total_gain"
+        )
+
+        # XGBoost may use f0, f1, ... or named features
+        booster_feature_names = booster.feature_names
+
+        if booster_feature_names is None:
+            booster_feature_names = [
+                f"f{i}" for i in range(len(encoded_names))
+            ]
+
+        assert len(booster_feature_names) == len(encoded_names)
+
+        encoded_gain = np.array([
+            gain_map.get(name, 0.0)
+            for name in booster_feature_names
+        ])
+
+        # Map one-hot encoded features to business features
+        categorical_cols = list(
+            fitted_preprocessor.transformers_[0][2]
+        )
+
+        numeric_cols = list(
+            fitted_preprocessor.transformers_[1][2]
+        )
+
+        ohe = fitted_preprocessor.named_transformers_[
+            "categorical"
+        ]
+
+        # Match encoded feature order in the fitted
+        # ColumnTransformer: categorical, then numeric.
+        category_counts = [
+            len(categories)
+            for categories in ohe.categories_
+        ]
+
+        original_features = []
+
+        for column_name, count in zip(
+            categorical_cols,
+            category_counts
+        ):
+            original_features.extend(
+                [column_name] * count
+            )
+
+        original_features.extend(numeric_cols)
+
+        assert len(original_features) == len(encoded_gain), (
+            "Feature importance mapping mismatch. "
+            "Check OneHotEncoder output configuration."
+        )
+
+        rfc_feature_importance = (
+            pd.DataFrame({
+                "Feature": original_features,
+                "Total_Gain": encoded_gain
+            })
+            .groupby("Feature", as_index=False)["Total_Gain"]
+            .sum()
+            .sort_values(
+                "Total_Gain",
+                ascending=False
+            )
+            .reset_index(drop=True)
+        )
+
+        rfc_feature_importance["Rank"] = (
+            np.arange(
+                1,
+                len(rfc_feature_importance) + 1
+            )
+        )
+
+        total_gain = (
+            rfc_feature_importance["Total_Gain"].sum()
+        )
+
+        if total_gain > 0:
+            rfc_feature_importance["Importance_Pct"] = (
+                100.0
+                * rfc_feature_importance["Total_Gain"]
+                / total_gain
+            )
+        else:
+            rfc_feature_importance["Importance_Pct"] = 0.0
+
+        # Log complete feature importance
+        mlflow.log_dict(
+            rfc_feature_importance[
+                [
+                    "Rank",
+                    "Feature",
+                    "Total_Gain",
+                    "Importance_Pct"
+                ]
+            ].to_dict(orient="records"),
+            "feature_importance/feature_importance.json"
+        )
+
+        # Log non-zero feature importance separately
+        mlflow.log_dict(
+            rfc_feature_importance[
+                rfc_feature_importance["Total_Gain"] > 0
+            ][
+                [
+                    "Rank",
+                    "Feature",
+                    "Total_Gain",
+                    "Importance_Pct"
+                ]
+            ].to_dict(orient="records"),
+            "feature_importance/feature_importance_nonzero.json"
+        )
+
+        # ----------------------------------------------
+        # 5.8 Log fitted model to MLflow
+        # ----------------------------------------------
+        model_info = mlflow.sklearn.log_model(
+            sk_model=baseline_model,
+            artifact_path="model",
+            signature=model_signature,
+            input_example=input_example
+        )
+
+        # Record model URI as a run tag
+        mlflow.set_tag(
+            "baseline_model_uri",
+            model_info.model_uri
+        )
+
+        mlflow.set_tag(
+            "experiment_type",
+            "negative_sampling_baseline_comparison"
+        )
+
+        mlflow.set_tag(
+            "model_probability_output",
+            "raw_sampled_training_probability"
+        )
+
+        # ----------------------------------------------
+        # 5.9 Display results
+        # ----------------------------------------------
+        print("\nRFC BASELINE RESULTS")
+        print("--------------------")
+        print("Run ID:", baseline_run_id)
+        print("Model URI:", model_info.model_uri)
+        print("Training minutes:", round(training_minutes, 2))
+        print("Validation minutes:", round(validation_minutes, 2))
+
+        for metric_name, metric_value in (
+            baseline_validation_metrics.items()
+        ):
+            print(
+                f"{metric_name}: {metric_value:.6f}"
+            )
+
+        print("\nTop 20 original features:")
+        display(rfc_feature_importance.head(20))
+
+    print("\nBaseline MLflow run completed.")
+    print("Run ID:", baseline_run_id)
+
+else:
+    print("Baseline training skipped: run_baseline=false")
