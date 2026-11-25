@@ -42,3 +42,13 @@ Training source: bdp4_prod_ml_build.hi_customer_right_fit_cover_data.rfc_trainin
 Validation source: bdp4_prod_ml_build.hi_customer_right_fit_cover_data.rfc_training_20261119034822_validation
 Train: bdp4_prod_ml_build.hi_customer_right_fit_cover_data.rfc_training_20261119034822_train_sampled Validation: bdp4_prod_ml_build.hi_customer_right_fit_cover_data.rfc_training_20261119034822_validation
 Package versions: {'xgboost': '2.1.4', 'scikit-learn': '1.3.0', 'optuna': '4.5.0', 'shap': '0.49.1'}
+
+print("Actual sampled_train_df:")
+print("Source:", train_table)
+
+print("Training target distribution:")
+sampled_train_df.groupBy("target").count().orderBy("target").show()
+
+print("Validation source:", validation_table)
+
+print("Train source:", train_table, "Validation:", validation_table)
