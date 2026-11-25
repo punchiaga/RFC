@@ -1,0 +1,47 @@
+
+from pyspark.sql import functions as F
+
+seed = RFC_DATA_CONFIG["random_seed"]
+
+# Restore all snapshots after policy-level assignment
+split_df = source_df.join(
+    policy_split.select("policy_id", "dataset"),
+    on="policy_id",
+    how="inner"
+)
+
+# Full train / validation / test datasets
+train_df = split_df.filter(F.col("dataset") == "train").drop("dataset")
+validation_df = split_df.filter(F.col("dataset") == "validation").drop("dataset")
+test_df = split_df.filter(F.col("dataset") == "test").drop("dataset")
+
+# Deterministic sampling at the observation level
+def sample_bucket(df):
+    return F.pmod(
+        F.xxhash64(
+            F.col("policy_id"),
+            F.col("effective_dttm"),
+            F.lit(seed)
+        ),
+        F.lit(bucket_count)
+    )
+
+# Keep all training positives and configured percentage of negatives
+sampled_train_df = train_df.filter(
+    (F.col("target") == 1)
+    | (
+        (F.col("target") == 0)
+        & (sample_bucket(train_df) < negative_threshold)
+    )
+)
+
+# Sample validation and test without class-based filtering
+sampled_validation_df = validation_df.filter(
+    sample_bucket(validation_df) < validation_threshold
+)
+
+sampled_test_df = test_df.filter(
+    sample_bucket(test_df) < test_threshold
+)
+
+print("Configurable RFC sampling DataFrames created successfully")
