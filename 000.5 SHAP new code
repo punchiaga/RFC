@@ -35,3 +35,24 @@ print("Positive rate:", round(float(np.mean(y_shap)), 4))
 SHAP sample rows: 2000
 SHAP input features: 687
 Positive rate: 0.0295
+
+# Step 6B — Verify and transform SHAP features
+
+expected_features = list(X_train.columns)
+actual_features = list(X_shap_raw.columns)
+
+assert expected_features == actual_features, (
+    "SHAP input features do not match baseline training features"
+)
+
+baseline_preprocessor = baseline_model.named_steps["preprocessor"]
+
+X_shap_encoded = baseline_preprocessor.transform(X_shap_raw)
+
+shap_feature_names = baseline_preprocessor.get_feature_names_out()
+
+assert X_shap_encoded.shape[1] == len(shap_feature_names)
+
+print("Original SHAP features:", X_shap_raw.shape[1])
+print("Encoded SHAP features:", X_shap_encoded.shape[1])
+print("Feature alignment: PASS")
