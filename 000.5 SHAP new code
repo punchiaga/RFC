@@ -1,5 +1,6 @@
 # Step 6A — Sample validation data for baseline SHAP
-
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
 SHAP_SAMPLE_ROWS = 2000
 
 assert baseline_model is not None, "Baseline model is missing"
