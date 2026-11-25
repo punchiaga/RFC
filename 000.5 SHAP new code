@@ -83,3 +83,22 @@ assert shap_values.values.shape == X_shap_encoded.shape, (
 print("SHAP calculation: PASS")
 print("SHAP values shape:", shap_values.values.shape)
 print("SHAP output units: raw margin (log-odds)")
+
+# Step 6D — SHAP feature importance bar plot
+
+import matplotlib.pyplot as plt
+
+# Attach the encoded feature names to the SHAP explanation
+shap_values.feature_names = list(shap_feature_names)
+
+plt.figure(figsize=(12, 8))
+
+shap.plots.bar(
+    shap_values,
+    max_display=30,
+    show=False
+)
+
+plt.title("RFC Baseline — Top 30 SHAP Features")
+plt.tight_layout()
+plt.show()
