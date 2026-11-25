@@ -76,3 +76,8 @@ actual_negative_rate = sampled_counts[0] / full_counts[0]
 
 print(f"Actual negative sampling rate: {actual_negative_rate:.4%}")
 print(f"Configured negative sampling rate: {negative_sampling_rate:.2%}")
+
+Full training: {1: 565699, 0: 17368671}
+Sampled training: {1: 565699, 0: 1735904}
+Actual negative sampling rate: 9.9945%
+Configured negative sampling rate: 10.00%
