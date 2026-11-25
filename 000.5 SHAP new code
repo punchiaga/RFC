@@ -1,1 +1,32 @@
+# Step 6A — Sample validation data for baseline SHAP
 
+SHAP_SAMPLE_ROWS = 2000
+
+assert baseline_model is not None, "Baseline model is missing"
+assert baseline_run_id is not None, "Baseline MLflow run ID is missing"
+
+# Deterministic sample from full validation population
+shap_validation_spark_df = (
+    sampled_validation_df
+    .orderBy(
+        F.xxhash64(
+            F.col("policy_id"),
+            F.col("effective_dttm"),
+            F.lit(RANDOM_SEED)
+        )
+    )
+    .limit(SHAP_SAMPLE_ROWS)
+)
+
+# Reuse the existing preprocessing helper
+X_shap_raw, y_shap = prepare_pandas_batch(
+    shap_validation_spark_df
+)
+
+assert len(X_shap_raw) > 0
+assert len(X_shap_raw) <= SHAP_SAMPLE_ROWS
+assert list(X_shap_raw.columns) == list(X_train.columns)
+
+print("SHAP sample rows:", len(X_shap_raw))
+print("SHAP input features:", X_shap_raw.shape[1])
+print("Positive rate:", round(float(np.mean(y_shap)), 4))
