@@ -153,3 +153,73 @@ shap.plots.heatmap(
 plt.tight_layout()
 plt.show()
 plt.close()
+
+# Step 6F — Log SHAP visualisations to MLflow
+
+import matplotlib.pyplot as plt
+
+assert baseline_run_id is not None
+assert shap_values is not None
+
+shap_importance = np.abs(shap_values.values).mean(axis=0)
+top_feature_idx = int(np.argmax(shap_importance))
+
+with mlflow.start_run(run_id=baseline_run_id):
+
+    mlflow.log_params({
+        "shap_sample_rows": len(shap_values),
+        "shap_output_space": "raw_margin_log_odds"
+    })
+
+    # 1. Bar plot
+    shap.plots.bar(shap_values, max_display=30, show=False)
+    mlflow.log_figure(plt.gcf(), "shap/shap_bar.png")
+    plt.close()
+
+    # 2. Beeswarm
+    shap.plots.beeswarm(shap_values, max_display=30, show=False)
+    mlflow.log_figure(plt.gcf(), "shap/shap_beeswarm.png")
+    plt.close()
+
+    # 3. Dependence
+    shap.plots.scatter(
+        shap_values[:, top_feature_idx],
+        show=False
+    )
+    mlflow.log_figure(plt.gcf(), "shap/shap_dependence.png")
+    plt.close()
+
+    # 4. Waterfall
+    shap.plots.waterfall(
+        shap_values[0],
+        max_display=20,
+        show=False
+    )
+    mlflow.log_figure(plt.gcf(), "shap/shap_waterfall.png")
+    plt.close()
+
+    # 5. Heatmap
+    shap.plots.heatmap(
+        shap_values[:100],
+        max_display=20,
+        show=False
+    )
+    mlflow.log_figure(plt.gcf(), "shap/shap_heatmap.png")
+    plt.close()
+
+    # Log transformed-feature SHAP importance
+    shap_importance_df = (
+        pd.DataFrame({
+            "Feature": list(shap_feature_names),
+            "Mean_Abs_SHAP": shap_importance
+        })
+        .sort_values("Mean_Abs_SHAP", ascending=False)
+        .reset_index(drop=True)
+    )
+
+    mlflow.log_text(
+        shap_importance_df.to_csv(index=False),
+        "shap/shap_importance.csv"
+    )
+
+print("SHAP artifacts logged to baseline run:", baseline_run_id)
