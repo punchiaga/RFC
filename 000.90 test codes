@@ -129,7 +129,8 @@ if run_hpo:
     print("Best Validation PR-AUC:", hpo_study.best_value)
     print("Best parameters:", hpo_study.best_params)
 
-
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
 
 follow this boundary:
 Confirmed by your code/output: state it as fact.
