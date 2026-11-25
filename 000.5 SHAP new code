@@ -56,3 +56,30 @@ assert X_shap_encoded.shape[1] == len(shap_feature_names)
 print("Original SHAP features:", X_shap_raw.shape[1])
 print("Encoded SHAP features:", X_shap_encoded.shape[1])
 print("Feature alignment: PASS")
+
+# Step 6C — Calculate SHAP values
+
+import shap
+from scipy import sparse
+
+baseline_classifier = baseline_model.named_steps["classifier"]
+
+# Keep the encoded SHAP sample sparse where possible.
+X_shap_input = X_shap_encoded
+
+# Explain XGBoost's raw margin (log-odds),
+# not the negative-sampling-corrected probability.
+shap_explainer = shap.TreeExplainer(
+    baseline_classifier,
+    model_output="raw"
+)
+
+shap_values = shap_explainer(X_shap_input)
+
+assert shap_values.values.shape == X_shap_encoded.shape, (
+    "SHAP output dimensions do not match encoded features"
+)
+
+print("SHAP calculation: PASS")
+print("SHAP values shape:", shap_values.values.shape)
+print("SHAP output units: raw margin (log-odds)")
