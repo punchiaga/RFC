@@ -102,3 +102,54 @@ shap.plots.bar(
 plt.title("RFC Baseline — Top 30 SHAP Features")
 plt.tight_layout()
 plt.show()
+
+# Step 6E — Additional SHAP visualisations
+
+import matplotlib.pyplot as plt
+
+# 1. Beeswarm — global feature direction and magnitude
+shap.plots.beeswarm(
+    shap_values,
+    max_display=30,
+    show=False
+)
+plt.title("RFC Baseline — SHAP Beeswarm")
+plt.tight_layout()
+plt.show()
+plt.close()
+
+# 2. Dependence — highest-impact encoded feature
+shap_importance = np.abs(shap_values.values).mean(axis=0)
+top_feature_idx = int(np.argmax(shap_importance))
+
+shap.plots.scatter(
+    shap_values[:, top_feature_idx],
+    show=False
+)
+plt.title(
+    f"RFC — Dependence: {shap_feature_names[top_feature_idx]}"
+)
+plt.tight_layout()
+plt.show()
+plt.close()
+
+# 3. Waterfall — first validation customer
+shap.plots.waterfall(
+    shap_values[0],
+    max_display=20,
+    show=False
+)
+plt.title("RFC Baseline — Individual Explanation")
+plt.tight_layout()
+plt.show()
+plt.close()
+
+# 4. Heatmap — first 100 sampled customers
+shap.plots.heatmap(
+    shap_values[:100],
+    max_display=20,
+    show=False
+)
+plt.tight_layout()
+plt.show()
+plt.close()
