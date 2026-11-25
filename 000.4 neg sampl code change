@@ -63,3 +63,16 @@ Training target distribution:
 |     1| 565699|
 +------+-------+
 
+
+full_counts = target_counts(train_df)
+sampled_counts = target_counts(sampled_train_df)
+
+print("Full training:", full_counts)
+print("Sampled training:", sampled_counts)
+
+assert sampled_counts[1] == full_counts[1], "Positive records were lost!"
+
+actual_negative_rate = sampled_counts[0] / full_counts[0]
+
+print(f"Actual negative sampling rate: {actual_negative_rate:.4%}")
+print(f"Configured negative sampling rate: {negative_sampling_rate:.2%}")
