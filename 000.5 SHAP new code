@@ -31,3 +31,7 @@ assert list(X_shap_raw.columns) == list(X_train.columns)
 print("SHAP sample rows:", len(X_shap_raw))
 print("SHAP input features:", X_shap_raw.shape[1])
 print("Positive rate:", round(float(np.mean(y_shap)), 4))
+
+SHAP sample rows: 2000
+SHAP input features: 687
+Positive rate: 0.0295
