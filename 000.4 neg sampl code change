@@ -1,0 +1,36 @@
+# Load the existing full training dataset
+train_df = spark.table(train_table)
+
+# Deterministic 10% negative sampling
+negative_threshold = int(BUCKET_COUNT * negative_sampling_rate)
+
+sample_bucket = F.pmod(
+    F.xxhash64(
+        F.col("policy_id"),
+        F.col("effective_dttm"),
+        F.lit(RANDOM_SEED)
+    ),
+    F.lit(BUCKET_COUNT)
+)
+
+# Keep all positives and 10% of negatives
+sampled_train_df = train_df.filter(
+    (F.col("target") == 1)
+    | (
+        (F.col("target") == 0)
+        & (sample_bucket < negative_threshold)
+    )
+)
+
+# Validation remains unchanged
+sampled_validation_df = spark.table(validation_table)
+
+print("Negative sampling percentage:", negative_sample_pct)
+print("Negative threshold:", negative_threshold)
+print("Training source:", train_table)
+print("Validation source:", validation_table)
+
+required_tables = [
+    train_table,
+    validation_table,
+] + ([test_table] if score_test_after_hpo else [])
