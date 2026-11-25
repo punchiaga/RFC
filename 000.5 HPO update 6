@@ -1,0 +1,169 @@
+
+def prepare_pandas_batch(
+    df: DataFrame,
+    feature_columns: list[str] | None = None,
+) -> tuple[pd.DataFrame, np.ndarray]:
+
+    if feature_columns is None:
+        feature_columns = active_feature_columns
+
+    batch_pdf = (
+        prepare_rfc_features(df)
+        .select(*feature_columns, "target")
+        .toPandas()
+    )
+
+    X_batch = batch_pdf[feature_columns].copy()
+    y_batch = batch_pdf["target"].to_numpy(dtype=np.int8)
+
+    selected_numeric_columns = [
+        col for col in numeric_pipeline_columns
+        if col in feature_columns
+    ]
+
+    for column in selected_numeric_columns:
+        X_batch[column] = (
+            pd.to_numeric(X_batch[column], errors="coerce")
+            .astype(np.float32)
+        )
+
+    selected_onehot_columns = [
+        col for col in onehot_columns
+        if col in feature_columns
+    ]
+
+    remaining_object_columns = set(
+        X_batch.select_dtypes(include=["object"]).columns
+    )
+
+    assert remaining_object_columns == set(selected_onehot_columns), (
+        "Unexpected object columns: "
+        f"{sorted(remaining_object_columns - set(selected_onehot_columns))}"
+    )
+
+    return X_batch, y_batch
+
+# ============================================================
+# SECTION 6 — HPO PREPROCESSING (150 SELECTED FEATURES)
+# ============================================================
+
+from scipy import sparse
+
+# Original business feature names, not one-hot encoded names
+SELECTED_FEATURES = [
+    # Paste your 150 features here
+]
+
+if run_hpo:
+
+    # 1. Minimal feature validation
+    assert len(SELECTED_FEATURES) == 150
+    assert len(SELECTED_FEATURES) == len(set(SELECTED_FEATURES))
+    assert set(SELECTED_FEATURES).issubset(X_train.columns)
+
+    # 2. Identify selected categorical and numeric features
+    hpo_categorical_cols = [
+        col for col in onehot_columns
+        if col in SELECTED_FEATURES
+    ]
+
+    hpo_numeric_cols = [
+        col for col in numeric_pipeline_columns
+        if col in SELECTED_FEATURES
+    ]
+
+    assert set(hpo_categorical_cols + hpo_numeric_cols) == set(
+        SELECTED_FEATURES
+    ), "Selected features do not match preprocessing groups"
+
+    # 3. Build a new preprocessor for HPO only
+    hpo_preprocessor = ColumnTransformer(
+        transformers=[
+            (
+                "categorical",
+                OneHotEncoder(
+                    handle_unknown="ignore",
+                    sparse_output=True,
+                ),
+                hpo_categorical_cols,
+            ),
+            (
+                "numeric",
+                "passthrough",
+                hpo_numeric_cols,
+            ),
+        ],
+        remainder="drop",
+        sparse_threshold=0.3,
+    )
+
+    # 4. Fit on selected training features only
+    X_train_hpo = hpo_preprocessor.fit_transform(
+        X_train[SELECTED_FEATURES]
+    )
+
+    assert X_train_hpo.shape[0] == len(y_train)
+
+    # 5. Prepare validation using only selected features
+    validation_batched_df = add_batch_id(
+        sampled_validation_df,
+        "_hpo_validation_batch",
+        evaluation_batches,
+    )
+
+    X_validation_hpo_parts = []
+    y_validation_hpo_parts = []
+
+    for batch_id in range(evaluation_batches):
+
+        X_part, y_part = prepare_pandas_batch(
+            validation_batched_df.filter(
+                F.col("_hpo_validation_batch") == batch_id
+            ),
+            feature_columns=SELECTED_FEATURES,
+        )
+
+        X_validation_hpo_parts.append(
+            hpo_preprocessor.transform(X_part)
+        )
+
+        y_validation_hpo_parts.append(y_part)
+
+        print(
+            f"HPO validation batch "
+            f"{batch_id + 1}/{evaluation_batches}: "
+            f"{len(y_part):,} rows"
+        )
+
+        del X_part, y_part
+        gc.collect()
+
+    # 6. Combine validation batches
+    if sparse.issparse(X_train_hpo):
+        X_validation_hpo = sparse.vstack(
+            X_validation_hpo_parts,
+            format="csr",
+        )
+    else:
+        X_validation_hpo = np.vstack(
+            X_validation_hpo_parts
+        )
+
+    y_validation_hpo = np.concatenate(
+        y_validation_hpo_parts
+    )
+
+    del X_validation_hpo_parts, y_validation_hpo_parts
+    gc.collect()
+
+    # 7. Final checks
+    assert X_validation_hpo.shape[0] == len(y_validation_hpo)
+    assert X_train_hpo.shape[1] == X_validation_hpo.shape[1]
+    assert len(y_validation_hpo) == sampled_validation_df.count()
+    assert set(np.unique(y_validation_hpo)) == {0, 1}
+
+    print("Selected features:", len(SELECTED_FEATURES))
+    print("Encoded HPO features:", X_train_hpo.shape[1])
+    print("HPO Train matrix:", X_train_hpo.shape)
+    print("HPO Validation matrix:", X_validation_hpo.shape)
+    print("SECTION 6: PASS")
