@@ -45,3 +45,47 @@ sampled_test_df = test_df.filter(
 )
 
 print("Configurable RFC sampling DataFrames created successfully")
+
+
+create delta:
+# Step 9: Persist RFC datasets to Delta tables
+
+for dataset_name, (df, table_name) in RFC_OUTPUT_DATASETS.items():
+
+    print(f"Writing {dataset_name}: {table_name}")
+
+    (
+        df.write
+        .format("delta")
+        .mode("overwrite")
+        .saveAsTable(table_name)
+    )
+
+    print(f"Completed: {dataset_name}")
+
+print("\nAll six RFC Delta tables created successfully.")
+
+for dataset_name, (_, table_name) in RFC_OUTPUT_DATASETS.items():
+    print(f"  {dataset_name}: {table_name}")
+
+
+Writing train: bdp4_prod_ml_build.hi_customer_right_fit_cover_data.rfc_training_20261119034822_train
+Completed: train
+Writing validation: bdp4_prod_ml_build.hi_customer_right_fit_cover_data.rfc_training_20261119034822_validation
+Completed: validation
+Writing test: bdp4_prod_ml_build.hi_customer_right_fit_cover_data.rfc_training_20261119034822_test
+Completed: test
+Writing train_sampled: bdp4_prod_ml_build.hi_customer_right_fit_cover_data.rfc_training_20261119034822_train_sampled
+Completed: train_sampled
+Writing validation_sampled: bdp4_prod_ml_build.hi_customer_right_fit_cover_data.rfc_training_20261119034822_validation_sampled
+Completed: validation_sampled
+Writing test_sampled: bdp4_prod_ml_build.hi_customer_right_fit_cover_data.rfc_training_20261119034822_test_sampled
+Completed: test_sampled
+
+All six RFC Delta tables created successfully.
+  train: bdp4_prod_ml_build.hi_customer_right_fit_cover_data.rfc_training_20261119034822_train
+  validation: bdp4_prod_ml_build.hi_customer_right_fit_cover_data.rfc_training_20261119034822_validation
+  test: bdp4_prod_ml_build.hi_customer_right_fit_cover_data.rfc_training_20261119034822_test
+  train_sampled: bdp4_prod_ml_build.hi_customer_right_fit_cover_data.rfc_training_20261119034822_train_sampled
+  validation_sampled: bdp4_prod_ml_build.hi_customer_right_fit_cover_data.rfc_training_20261119034822_validation_sampled
+  test_sampled: bdp4_prod_ml_build.hi_customer_right_fit_cover_data.rfc_training_20261119034822_test_sampled
