@@ -52,3 +52,14 @@ sampled_train_df.groupBy("target").count().orderBy("target").show()
 print("Validation source:", validation_table)
 
 print("Train source:", train_table, "Validation:", validation_table)
+
+Actual sampled_train_df:
+Source: bdp4_prod_ml_build.hi_customer_right_fit_cover_data.rfc_training_20261119034822_train
+Training target distribution:
++------+-------+
+|target|  count|
++------+-------+
+|     0|1735904|
+|     1| 565699|
++------+-------+
+
