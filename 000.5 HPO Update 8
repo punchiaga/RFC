@@ -1,0 +1,98 @@
+
+# ============================================================
+# SECTION 8 — RUN OPTUNA HPO WITH MLflow PARENT RUN
+# ============================================================
+
+if run_hpo:
+
+    mlflow.set_experiment(mlflow_experiment)
+
+    hpo_parent_run_name = (
+        f"rfc_xgb_hpo_neg_{negative_sample_pct}pct"
+        f"_{len(SELECTED_FEATURES)}features"
+    )
+
+    with mlflow.start_run(
+        run_name=hpo_parent_run_name
+    ) as hpo_parent_run:
+
+        hpo_parent_run_id = hpo_parent_run.info.run_id
+
+        # Parent-run configuration
+        mlflow.log_params({
+            "algorithm": "xgboost",
+            "train_table": train_table,
+            "validation_table": validation_table,
+            "negative_sample_pct": negative_sample_pct,
+            "positive_sample_pct": 100,
+            "selected_feature_count": len(SELECTED_FEATURES),
+            "encoded_feature_count": X_train_hpo.shape[1],
+            "trial_count_requested": hpo_trial_count,
+            "objective_metric": "validation_pr_auc",
+            "sampler": "TPESampler",
+            "random_seed": RANDOM_SEED,
+            "test_used_for_trial_selection": False,
+            "early_stopping_rounds": hpo_early_stopping_rounds,
+        })
+
+        # Exact feature contract
+        mlflow.log_dict(
+            {
+                "selected_features": SELECTED_FEATURES,
+                "original_feature_count": len(SELECTED_FEATURES),
+                "encoded_feature_count": X_train_hpo.shape[1],
+            },
+            "hpo/selected_features.json",
+        )
+
+        # Optuna study
+        hpo_study = optuna.create_study(
+            study_name=(
+                f"rfc_xgb_hpo_neg_{negative_sample_pct}pct"
+            ),
+            direction="maximize",
+            sampler=optuna.samplers.TPESampler(
+                seed=RANDOM_SEED
+            ),
+        )
+
+        hpo_study.optimize(
+            hpo_objective,
+            n_trials=hpo_trial_count,
+            timeout=(hpo_timeout_minutes * 60) or None,
+            gc_after_trial=True,
+            show_progress_bar=True,
+            catch=(Exception,),
+        )
+
+        completed_trials = [
+            trial for trial in hpo_study.trials
+            if trial.state == optuna.trial.TrialState.COMPLETE
+        ]
+
+        mlflow.log_metrics({
+            "completed_trials": float(len(completed_trials)),
+            "failed_trials": float(
+                sum(
+                    trial.state == optuna.trial.TrialState.FAIL
+                    for trial in hpo_study.trials
+                )
+            ),
+        })
+
+        if not completed_trials:
+            raise RuntimeError(
+                "HPO finished without any successful trials. "
+                "Inspect child-run errors before proceeding."
+            )
+
+        mlflow.log_metric(
+            "best_validation_pr_auc",
+            float(hpo_study.best_value),
+        )
+
+    print("HPO parent run ID:", hpo_parent_run_id)
+    print("Completed trials:", len(completed_trials))
+    print("Best trial:", hpo_study.best_trial.number)
+    print("Best Validation PR-AUC:", hpo_study.best_value)
+    print("Best parameters:", hpo_study.best_params)
